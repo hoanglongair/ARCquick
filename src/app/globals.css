@@ -1,0 +1,292 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 20% 4%;
+    --foreground: 0 0% 100%;
+    --card: 240 15% 8%;
+    --card-foreground: 0 0% 100%;
+    --popover: 240 15% 8%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 186 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 240 10% 16%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 10% 16%;
+    --muted-foreground: 240 5% 50%;
+    --accent: 280 100% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 100% 50%;
+    --success-foreground: 0 0% 0%;
+    --warning: 45 100% 50%;
+    --warning-foreground: 0 0% 0%;
+    --border: 240 10% 20%;
+    --input: 240 10% 16%;
+    --ring: 186 100% 50%;
+    --radius: 0.75rem;
+
+    /* Original design variables */
+    --bg: 240 20% 4%;
+    --bg2: 240 15% 6%;
+    --surface: rgba(255,255,255,0.03);
+    --surface2: rgba(255,255,255,0.06);
+    --border2: rgba(255,255,255,0.15);
+    --accent: 186 100% 50%;
+    --accent2: 280 100% 60%;
+    --accent3: 152 100% 50%;
+    --gold: 45 100% 50%;
+    --text: 0 0% 94%;
+    --muted: 240 5% 45%;
+    --faint: rgba(240,244,248,0.15);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background: hsl(var(--bg));
+    color: hsl(var(--text));
+    font-family: var(--font-syne), system-ui, sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Custom cursor */
+#cursor {
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  background: hsl(var(--primary));
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width 0.15s, height 0.15s, opacity 0.2s;
+  mix-blend-mode: screen;
+}
+
+#cursor-ring {
+  position: fixed;
+  width: 36px;
+  height: 36px;
+  border: 1px solid hsla(var(--primary) / 0.4);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: transform 0.08s, width 0.2s, height 0.2s;
+}
+
+body:has(button:hover) #cursor,
+body:has(a:hover) #cursor {
+  width: 20px;
+  height: 20px;
+}
+
+/* Animated grain overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+}
+
+/* Canvas background */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Page wrapper */
+.page-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Glow lines */
+.glow-line {
+  position: absolute;
+  height: 1px;
+  width: 40%;
+  background: linear-gradient(to right, transparent, hsl(var(--primary)), transparent);
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+/* Logo dot pulse animation */
+.logo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  box-shadow: 0 0 12px hsl(var(--primary));
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.3); }
+}
+
+/* Custom scrollbar */
+.scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 3px;
+}
+
+/* Gradient text */
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-arc-cyan via-arc-purple to-arc-pink;
+}
+
+/* Shimmer animation for gradient text */
+.text-shimmer {
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)));
+  background-size: 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0%; }
+  100% { background-position: 200%; }
+}
+
+/* Glow effect */
+.glow {
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+}
+
+.glow-sm {
+  box-shadow: 0 0 10px hsl(var(--primary) / 0.2);
+}
+
+/* Fade up animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.8s ease both;
+}
+
+/* Scroll line animation */
+@keyframes scroll-anim {
+  0% { opacity: 0; transform: scaleY(0); transform-origin: top; }
+  50% { opacity: 1; transform: scaleY(1); }
+  100% { opacity: 0; transform: scaleY(0); transform-origin: bottom; }
+}
+
+/* Ticker animation */
+@keyframes ticker-move {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-ticker {
+  animation: ticker-move 30s linear infinite;
+}
+
+/* Hero badge pulse */
+.hero-badge-pulse {
+  width: 6px;
+  height: 6px;
+  background: hsl(var(--success));
+  border-radius: 50%;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* Reveal on scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s, transform 0.6s;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Step progress indicator */
+.step-progress::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: conic-gradient(hsl(var(--primary)) var(--prog, 0%), transparent 0%);
+  z-index: -1;
+  opacity: 0.3;
+}
+
+/* Surface styles */
+.surface {
+  background: var(--surface);
+}
+
+.surface-2 {
+  background: var(--surface2);
+}
+
+.border-2 {
+  border-color: var(--border2);
+}
+
+/* Responsive nav */
+@media (max-width: 900px) {
+  .nav-links-desktop {
+    display: none;
+  }
+}
+
+/* Nav link underline animation */
+.nav-link {
+  position: relative;
+  transition: color 0.2s;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: hsl(var(--primary));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s;
+}
+.nav-link:hover::after {
+  transform: scaleX(1);
+}
+.nav-link:hover {
+  color: hsl(0, 0%, 94%);
+}
+
