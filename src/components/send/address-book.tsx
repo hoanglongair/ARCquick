@@ -72,7 +72,7 @@ export function AddressBook({ onSelect, excludeIds = [] }: AddressBookProps) {
         </div>
         <Button
           size="sm"
-          variant={isAdding ? "outline" : "default"}
+          variant={isAdding ? "outline" : "primary"}
           onClick={() => setIsAdding(!isAdding)}
           className="shrink-0"
         >

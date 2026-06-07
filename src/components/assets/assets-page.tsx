@@ -1,13 +1,12 @@
 "use client";
 
-import { useAccount, useBalance } from "wagmi";
-import { useTokenBalance } from "@/hooks";
-import { Coins, TrendingUp, ArrowDownUp, Wifi } from "lucide-react";
-import { StatsCard } from "@/components/dashboard/stats-card";
+import { useAccount } from "wagmi";
+import { Coins, ArrowDownUp, TrendingUp, Wifi } from "lucide-react";
 import { UnifiedBalance } from "./unified-balance";
+import Link from "next/link";
 
 export function AssetsPage() {
-  const { address, isConnected, chain } = useAccount();
+  const { isConnected, chain } = useAccount();
 
   if (!isConnected) {
     return (
@@ -19,9 +18,9 @@ export function AssetsPage() {
   }
 
   const tokens = [
-    { symbol: "ETH", name: "Ethereum", color: "primary" as const },
-    { symbol: "USDC", name: "USD Coin", color: "green" as const },
-    { symbol: "EURC", name: "Euro Coin", color: "yellow" as const },
+    { symbol: "ETH", name: "Ethereum", bg: "bg-primary/10", text: "text-primary" },
+    { symbol: "USDC", name: "USD Coin", bg: "bg-green-500/10", text: "text-green-500" },
+    { symbol: "EURC", name: "Euro Coin", bg: "bg-yellow-500/10", text: "text-yellow-500" },
   ];
 
   return (
@@ -53,13 +52,7 @@ export function AssetsPage() {
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${
-                    token.symbol === "ETH"
-                      ? "bg-primary/10 text-primary"
-                      : token.symbol === "USDC"
-                        ? "bg-green-500/10 text-green-500"
-                        : "bg-yellow-500/10 text-yellow-500"
-                  }`}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${token.bg} ${token.text}`}
                 >
                   {token.symbol === "ETH" ? "\u039E" : "$"}
                 </div>
@@ -70,9 +63,7 @@ export function AssetsPage() {
               </div>
               <div className="text-right">
                 <p className="font-semibold">--</p>
-                <p className="text-xs text-muted-foreground">
-                  {address ? "Balance fetched on chain" : "N/A"}
-                </p>
+                <p className="text-xs text-muted-foreground">Balance fetched on chain</p>
               </div>
             </div>
           ))}
@@ -84,22 +75,22 @@ export function AssetsPage() {
           Quick Actions
         </h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <button className="flex flex-col items-center gap-2 rounded-xl border bg-card p-4 transition-colors hover:bg-secondary/30">
+          <Link href="/swap" className="flex flex-col items-center gap-2 rounded-xl border bg-card p-4 transition-colors hover:bg-secondary/30">
             <ArrowDownUp className="h-5 w-5 text-primary" />
             <span className="text-xs font-medium">Swap</span>
-          </button>
-          <button className="flex flex-col items-center gap-2 rounded-xl border bg-card p-4 transition-colors hover:bg-secondary/30">
+          </Link>
+          <Link href="/bridge" className="flex flex-col items-center gap-2 rounded-xl border bg-card p-4 transition-colors hover:bg-secondary/30">
             <TrendingUp className="h-5 w-5 text-purple-500" />
             <span className="text-xs font-medium">Bridge</span>
-          </button>
-          <button className="flex flex-col items-center gap-2 rounded-xl border bg-card p-4 transition-colors hover:bg-secondary/30">
+          </Link>
+          <Link href="/send" className="flex flex-col items-center gap-2 rounded-xl border bg-card p-4 transition-colors hover:bg-secondary/30">
             <Wifi className="h-5 w-5 text-green-500" />
             <span className="text-xs font-medium">Send</span>
-          </button>
-          <button className="flex flex-col items-center gap-2 rounded-xl border bg-card p-4 transition-colors hover:bg-secondary/30">
+          </Link>
+          <Link href="/receive" className="flex flex-col items-center gap-2 rounded-xl border bg-card p-4 transition-colors hover:bg-secondary/30">
             <Coins className="h-5 w-5 text-yellow-500" />
             <span className="text-xs font-medium">Receive</span>
-          </button>
+          </Link>
         </div>
       </div>
     </div>

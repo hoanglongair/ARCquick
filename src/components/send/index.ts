@@ -1,1 +1,1 @@
-export { AddressInput } from "./address-input";
+export { AddressBook } from "./address-book";

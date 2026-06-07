@@ -145,6 +145,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Chain features config with per-chain tokens, feature availability, and explorer URLs
   - useNetworkPreferences hook for chain-aware token/feature selection
   - Supported chains: Arc Sepolia, Sepolia, Ethereum, Polygon, Arbitrum
+- **Phase 3.1: Send Money Enhancements (COMPLETED)**
+  - AddressBook store (Zustand, persisted) with add/edit/delete/search contacts
+  - AddressBook component integrated into Send page
+  - QRCode component using qrcode library for wallet address display
+  - Receive page (`/receive`) with QR code display and copy address functionality
+- **Phase 3.2: Unified Balance (COMPLETED)**
+  - UnifiedBalance component showing total volume and stats
+  - AssetsPage (`/assets`) with token list and quick action links
+  - Quick actions: Swap, Bridge, Send, Receive navigation
 
 ### Changed
 

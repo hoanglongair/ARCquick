@@ -104,6 +104,19 @@ Mục tiêu:
 - [x] Supported chains: Arc Sepolia, Sepolia, Ethereum, Polygon, Arbitrum
 - [x] Per-chain feature availability tracking
 
+### Phase 3.1: Send Money Enhancements ✅
+- [x] AddressBook store (Zustand, persisted)
+- [x] AddressBook component (add/edit/delete/search contacts)
+- [x] QRCode component (qrcode library, share wallet address)
+- [x] Receive page (/receive) with QR + copy address
+- [x] Send page integration (address book picker)
+
+### Phase 3.2: Unified Balance ✅
+- [x] UnifiedBalance component
+- [x] AssetsPage (/assets) with token list + quick actions
+- [x] Volume stats + bridge volume tracking
+- [x] Quick action links (Swap/Bridge/Send/Receive)
+
 ## Pending Features
 
 ### Phase 2: Enhanced Features
@@ -115,10 +128,10 @@ Mục tiêu:
 **Phase 2 COMPLETED!**
 
 ### Phase 3: Advanced
-- [ ] Send Money
-- [ ] Unified Balance
-- [ ] Real-time Updates
-- [ ] Advanced Trading
+- [x] ~~Send Money~~ (Phase 3.1 completed)
+- [x] ~~Unified Balance~~ (Phase 3.2 completed)
+- [ ] Real-time Updates (Phase 3.3)
+- [ ] Advanced Trading (Phase 3.4)
 
 ### Phase 4: Security
 - [ ] Transaction Simulation
