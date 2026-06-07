@@ -13,7 +13,7 @@ Mục tiêu:
 
 ## Current Phase
 
-**Phase 1: Core MVP** - Gần hoàn thành (Phase 1.1, 1.2, 1.3 done)
+**Phase 2: Enhanced Features** - COMPLETED! Moving to Phase 3.
 
 ## Completed Features
 
@@ -37,31 +37,82 @@ Mục tiêu:
 - [x] Cấu hình Arc Network trong wagmi (Arc Testnet chain)
 - [x] Setup App Kit SDK (config + provider)
 
-## In Progress Features
+### Phase 1.2: Wallet Connection ✅
+- [x] WalletProvider component (sử dụng wagmi có sẵn)
+- [x] ConnectButton component (tích hợp trong Navbar)
+- [x] WalletModal component (MetaMask, WalletConnect, Coinbase)
+- [x] NetworkSwitcher component (Arc Sepolia, Sepolia, Ethereum, Polygon, Arbitrum)
+- [x] useWallet hook
+- [x] Landing page với effects (cursor, canvas, animations)
 
 ### Phase 1.3: Token Swap (App Kit Swap) ✅
 - [x] SwapPage component
-- [x] TokenBox component
-- [x] TokenSelector component
-- [x] Token balance display (useTokenBalance hook)
-- [x] Swap quote + execution (useSwap hook)
-- [x] Swap UI states (loading, error, success, pending)
-- [x] AppKit SDK swap wrapper (getSwapQuote, executeSwap, buildSwapTransaction)
+- [x] TokenBox component (MAX button, USD value, balance check)
+- [x] TokenSelector component (wallet balance, ETH handling)
+- [x] useTokenBalance hook
+- [x] useSwap hook với quote/execute cycle
 - [x] SwapSettings modal (slippage tolerance)
+- [x] AppKit SDK swap wrapper
+
+### Phase 1.4: Cross-Chain Bridge (CCTP) ✅
+- [x] BridgePage component
+- [x] ChainSelector component (source + destination chain)
+- [x] Bridge chains config (Arc, Sepolia, Ethereum, Polygon, Arbitrum)
+- [x] Bridge AppKit wrapper
+- [x] useBridge hook
+- [x] Destination address input
+
+### Phase 1.5: Basic Send (App Kit Send) ✅
+- [x] SendPage component
+- [x] AddressInput component (validation, clipboard paste, visual feedback)
+- [x] useSend hook với validation, execute, status management
+- [x] Token selector cho Send page
+- [x] Send UI states (confirming, pending, success, error)
+- [x] Memo/note field
+
+### Phase 1.6: Transaction History ✅
+- [x] TransactionPage component với filter tabs
+- [x] TransactionList component (grouped by date)
+- [x] TransactionToast component
+- [x] useTransactionHistory hook
+- [x] Clear history + Explorer links
+
+### Phase 2.1: User Authentication (Supabase) ✅
+- [x] Supabase client setup
+- [x] AuthProvider + useAuth hook
+- [x] AuthModal (sign in / sign up / password toggle)
+- [x] Email + password authentication flow
+- [x] User state integrated in Navbar (dropdown, profile link)
+
+### Phase 2.3: Advanced Swap Settings ✅
+- [x] SwapSettings modal với tabs (Swap / Advanced)
+- [x] Slippage tolerance (0.1%, 0.5%, 1%, custom)
+- [x] Transaction deadline (1-60 minutes)
+- [x] Gas preference (slow/normal/fast)
+- [x] App store với deadline, gas preference, theme settings
+
+### Phase 2.4: Analytics Dashboard ✅
+- [x] StatsCard component (animated counter, trend indicator)
+- [x] AnalyticsDashboard (total volume, gas spent, success rate, tx count)
+- [x] Volume chart (12-month bar chart)
+- [x] Transaction types pie chart (swaps/bridges/sends)
+- [x] DashboardPage route
+
+### Phase 2.5: Multi-Network Support ✅
+- [x] Chain features config (per-chain tokens, features, explorer)
+- [x] useNetworkPreferences hook
+- [x] Supported chains: Arc Sepolia, Sepolia, Ethereum, Polygon, Arbitrum
+- [x] Per-chain feature availability tracking
 
 ## Pending Features
 
-### Phase 1: Core MVP
-- [x] ~~Token Swap (App Kit)~~ (Phase 1.3 completed)
-- [x] ~~Token Balance Display~~ (Phase 1.3 completed)
-- [ ] Cross-Chain Bridge
-- [ ] Transaction History
-
 ### Phase 2: Enhanced Features
-- [ ] User Authentication (Supabase)
-- [ ] Advanced Swap Settings
-- [ ] Analytics Dashboard
-- [ ] Multi-Network Support
+- [x] ~~User Authentication (Supabase)~~ (Phase 2.1 completed)
+- [x] ~~Advanced Swap Settings~~ (Phase 2.3 completed)
+- [x] ~~Analytics Dashboard~~ (Phase 2.4 completed)
+- [x] ~~Multi-Network Support~~ (Phase 2.5 completed)
+
+**Phase 2 COMPLETED!**
 
 ### Phase 3: Advanced
 - [ ] Send Money

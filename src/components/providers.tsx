@@ -6,6 +6,7 @@ import { config as wagmiConfig } from "@/lib/wagmi/config";
 import { AppKitProvider } from "@/lib/app-kit/provider";
 import { ToastProvider } from "@/components/effects";
 import { WalletModalProvider } from "@/components/wallet";
+import { AuthProvider } from "@/lib/supabase";
 import { useState } from "react";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -27,7 +28,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <AppKitProvider>
           <ToastProvider>
             <WalletModalProvider>
-              {children}
+              <AuthProvider>
+                {children}
+              </AuthProvider>
             </WalletModalProvider>
           </ToastProvider>
         </AppKitProvider>

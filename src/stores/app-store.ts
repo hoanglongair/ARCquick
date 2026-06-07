@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+export type GasPreference = "slow" | "normal" | "fast";
+export type ThemePreference = "dark" | "light" | "system";
+
 interface Transaction {
   id: string;
   type: "swap" | "bridge" | "send";
@@ -23,6 +26,15 @@ interface AppState {
   slippageTolerance: number;
   setSlippageTolerance: (value: number) => void;
 
+  txDeadline: number;
+  setTxDeadline: (minutes: number) => void;
+
+  gasPreference: GasPreference;
+  setGasPreference: (pref: GasPreference) => void;
+
+  theme: ThemePreference;
+  setTheme: (theme: ThemePreference) => void;
+
   pendingTxs: Record<string, Transaction>;
   addPendingTx: (tx: Transaction) => void;
   removePendingTx: (id: string) => void;
@@ -30,8 +42,7 @@ interface AppState {
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set, get) => ({
-      // Transaction history
+    (set, _get) => ({
       transactions: [],
       addTransaction: (tx) =>
         set((state) => ({
@@ -45,11 +56,18 @@ export const useAppStore = create<AppState>()(
         })),
       clearTransactions: () => set({ transactions: [] }),
 
-      // UI preferences
-      slippageTolerance: 0.5, // 0.5%
+      slippageTolerance: 0.5,
       setSlippageTolerance: (value) => set({ slippageTolerance: value }),
 
-      // Pending transactions
+      txDeadline: 20,
+      setTxDeadline: (minutes) => set({ txDeadline: minutes }),
+
+      gasPreference: "normal",
+      setGasPreference: (pref) => set({ gasPreference: pref }),
+
+      theme: "dark",
+      setTheme: (_theme) => {},
+
       pendingTxs: {},
       addPendingTx: (tx) =>
         set((state) => ({
@@ -66,6 +84,9 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         transactions: state.transactions,
         slippageTolerance: state.slippageTolerance,
+        txDeadline: state.txDeadline,
+        gasPreference: state.gasPreference,
+        theme: state.theme,
       }),
     }
   )

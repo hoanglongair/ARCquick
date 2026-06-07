@@ -47,6 +47,55 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - WalletModalProvider and useWalletModal hook for wallet modal state management
   - slide-up animation for modal components
 
+- **Phase 1.4: Cross-Chain Bridge (COMPLETED)**
+  - BridgePage component with source/destination chain selection
+  - ChainSelector component for chain selection modal
+  - Bridge chains config (`src/lib/app-kit/bridge-chains.ts`) with Arc, Sepolia, Ethereum, Polygon, Arbitrum
+  - Bridge AppKit wrapper (`src/lib/app-kit/bridge.ts`) with getBridgeQuote, executeBridge, buildBridgeTransaction, isValidBridgeAmount
+  - useBridge hook with full quote/execute cycle, status management, and transaction tracking
+  - Destination address input for bridging to different addresses
+  - Bridge route added to navbar navigation
+
+- **Phase 1.5: Basic Send (COMPLETED)**
+  - SendPage component with address input, token selector, amount, and memo fields
+  - AddressInput component with Ethereum address validation, clipboard paste, and visual feedback
+  - useSend hook with full validation (address, amount, self-send check), execute flow, and status management
+  - Token selector integration for choosing which token to send
+  - Send UI states (confirming, pending, success, error) with Toast feedback
+  - Memo/note field for adding transfer notes (140 char limit)
+  - Send route added to navbar navigation
+
+- **Phase 1.6: Transaction History (COMPLETED)**
+  - TransactionPage component with filter tabs (All/Swaps/Bridges/Sends)
+  - TransactionList component with grouped-by-date view
+  - TransactionToast component for pending transaction notifications
+  - useTransactionHistory hook with filtering, grouping, and stats calculation
+  - Clear history functionality
+  - Explorer links for each transaction hash
+
+- **Phase 2.1: User Authentication (COMPLETED)**
+  - Supabase client setup (`src/lib/supabase/client.ts`)
+  - AuthProvider + useAuth hook with email/password sign-in and sign-up flow
+  - AuthModal component with sign-in/sign-up toggle, password visibility toggle, validation, and error handling
+  - User state integrated into Navbar with dropdown, profile link, and settings access
+- **Phase 2.3: Advanced Swap Settings (COMPLETED)**
+  - SwapSettings modal with tabs (Swap / Advanced)
+  - Slippage tolerance options (0.1%, 0.5%, 1%, custom)
+  - Transaction deadline configuration (1-60 minutes)
+  - Gas preference selector (slow/normal/fast)
+  - App store enhanced with deadline, gas preference, and theme settings (persisted to localStorage)
+
+- **Phase 2.4: Analytics Dashboard (COMPLETED)**
+  - StatsCard component with animated counter, trend indicator, and color variants
+  - AnalyticsDashboard with total volume, transaction count, gas spent, and success rate cards
+  - 12-month volume bar chart
+  - Transaction types donut chart (swaps/bridges/sends breakdown)
+  - DashboardPage at `/dashboard` route
+- **Phase 2.5: Multi-Network Support (COMPLETED)**
+  - Chain features config with per-chain tokens, feature availability, and explorer URLs
+  - useNetworkPreferences hook for chain-aware token/feature selection
+  - Supported chains: Arc Sepolia, Sepolia, Ethereum, Polygon, Arbitrum
+
 ### Changed
 
 - Updated PROJECT_STATE.md with project status
