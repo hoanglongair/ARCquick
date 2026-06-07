@@ -116,6 +116,34 @@ User navigates to /dashboard
   → Display with animated counters
 ```
 
+**9. Address Book Flow**
+```
+User opens Send page
+  → AddressBook displays saved contacts
+  → User can search by label/address/note
+  → Click contact to auto-fill recipient
+  → User can add/edit/delete contacts
+  → Contacts persisted to localStorage (up to 50)
+```
+
+**10. Receive / QR Code Flow**
+```
+User navigates to /receive
+  → Display wallet address (copy button)
+  → Toggle QR code display
+  → QR encodes wallet address for easy scanning
+  → Warning shown about ARC-compatible tokens only
+```
+
+**11. Assets / Unified Balance Flow**
+```
+User navigates to /assets
+  → Show unified balance (total volume stats)
+  → List token balances per chain
+  → Quick action links: Swap, Bridge, Send, Receive
+  → Real-time balance refresh on page visit
+```
+
 ### Domain Rules
 
 **1. Token Rules**
