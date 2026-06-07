@@ -25,17 +25,20 @@ Sau khi hoàn thành **mỗi task/feature**, agent PHẢI thực hiện đúng t
 - Thêm entry mới với format:
   ```
   ## [YYYY-MM-DD] - vX.X.X
-  
+
   ### Added
-  - [Feature/Change description]
-  
+  - [Feature description]
+
   ### Changed
   - [Modified feature]
-  
+
   ### Fixed
-  - [Bug fixes]
+  - [Bug fix]
   ```
 - Liệt kê tất cả thay đổi trong task đó
+- Tách version rõ ràng cho từng phase/feature, tránh gom nhiều thay đổi không liên quan vào một entry
+- Không dùng `(COMPLETED)` — changelog dành cho người đọc, không phải internal tracker
+- Feature nhỏ có thể gom vào cùng version, nhưng bug fix phải tách section `Fixed` riêng
 
 ### Bước 4: Self Review
 - Kiểm tra code có hoạt động đúng không
@@ -62,7 +65,7 @@ ARCquick/
 ├── Docs/
 │   ├── ARCHITECTURE.md      # Cấu trúc kỹ thuật (ít thay đổi)
 │   ├── PROJECT_STATE.md     # Trạng thái dự án (thường xuyên cập nhật)
-│   ├── SYSTEM_KNOWLEDGE.md   # Business flows (cập nhật khi flow thay đổi)
+│   ├── SYSTEM_KNOWLEDGE.md  # Business flows (cập nhật khi flow thay đổi)
 │   └── CHANGELOG.md         # Lịch sử thay đổi (luôn cập nhật sau task)
 ├── Rules/
 │   └── PROJECT_RULES.md     # File này
@@ -137,11 +140,12 @@ Trước khi kết thúc session, đảm bảo:
 - [ ] Tất cả files đã save
 
 
-## Impotant!!!
+## Important!!!
+
 Before reading the entire codebase, always read:
 
-1. docs/PROJECT_STATE.md
-2. docs/SYSTEM_KNOWLEDGE.md
-3. docs/ARCHITECTURE.md
+1. Docs/PROJECT_STATE.md
+2. Docs/SYSTEM_KNOWLEDGE.md
+3. Docs/ARCHITECTURE.md
 
 Only scan source code when required.
