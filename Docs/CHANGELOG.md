@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [2026-06-07] - v0.2.0
+
+### Added
+
+- **Phase 4: Security & Compliance**
+  - Security store (`src/stores/security-store.ts`) with Zustand persist - whitelist, daily limits, simulation, anomaly detection
+  - Address whitelisting: add/remove approved recipients, toggle per-feature, persistent across sessions
+  - Daily limits: USD cap per token/chain, auto-reset at midnight, progress bar display, configurable limit
+  - Transaction simulation (`src/hooks/use-transaction-simulation.ts`) - preview gas estimate, price impact, warnings before signing
+  - Anomaly detection (`src/hooks/use-anomaly-detector.ts`) - rules: large tx (2x+ average), new recipient, unusual timing, rate limiting
+  - Gas price alerts (`src/hooks/use-gas-alerts.ts`) - configurable gwei threshold (default 50), toast on high gas
+  - `SecuritySettingsPanel` component (`src/components/security/security-settings-panel.tsx`) with 5 expandable sections
+  - Security tab added to SwapSettings modal alongside Swap/Advanced/Alerts tabs
+  - `useSend` hook updated: replaced fake `setTimeout` with real `useTransactionWatcher` chain monitoring
+
+---
+
 ## [2026-06-07] - v0.1.7
 
 ### Added

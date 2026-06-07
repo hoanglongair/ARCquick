@@ -181,6 +181,22 @@ User opens /trading page or Trading tab
   → Compare routes: enter amount, see all 5 route quotes with best highlighted
 ```
 
+**15. Security Features Flow**
+```
+User opens Settings → Security tab
+  → Address whitelist: add/remove addresses with labels, toggle enforcement
+  → Daily limits: set USD cap, view usage progress bar, auto-resets daily
+  → Transaction simulation: enable to preview gas/impact/warnings before signing
+  → Anomaly detection: alerts for large tx, new recipient, unusual time, rate limit
+  → Gas alerts: configurable gwei threshold, toast when exceeded
+
+  Whitelist enforcement: when enabled, non-whitelisted recipients show warning
+  Daily limit: transactions exceeding daily cap are blocked with error
+  Simulation: runs before tx, shows pass/fail with warnings
+  Anomaly: toast notification when unusual activity detected
+  Gas alert: toast when gas price exceeds threshold (30min cooldown)
+```
+
 ### Domain Rules
 
 **1. Token Rules**

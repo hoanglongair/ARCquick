@@ -11,3 +11,6 @@ export { usePriceAlertChecker } from "./use-price-alert-checker";
 export { useTransactionWatcher } from "./use-transaction-watcher";
 export { useLimitOrderChecker } from "./use-limit-order-checker";
 export { useTwapExecutor } from "./use-twap-executor";
+export { useTransactionSimulation } from "./use-transaction-simulation";
+export { useAnomalyDetector } from "./use-anomaly-detector";
+export { useGasPriceAlerts, getEstimatedGasPrice } from "./use-gas-alerts";

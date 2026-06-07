@@ -151,10 +151,16 @@ Mục tiêu:
 - [x] Navbar updated with TRADING link
 - [x] Order checkers auto-enabled via `Providers`
 
-### Phase 4: Security
-- [ ] Transaction Simulation
-- [ ] Address Whitelisting
-- [ ] 2FA Support
+### Phase 4: Security ✅
+- [x] Security store (`src/stores/security-store.ts`) with Zustand persist - whitelist, daily limits, settings
+- [x] Address whitelisting - add/remove approved recipients, toggle per-feature
+- [x] Daily limits - USD cap per token/chain, auto-reset daily, progress bar display
+- [x] Transaction simulation (`useTransactionSimulation` hook) - preview gas/price impact/warnings before signing
+- [x] Anomaly detection (`useAnomalyDetector` hook) - large tx, new recipient, unusual time, rate limit rules
+- [x] Gas price alerts (`useGasPriceAlerts` hook) - configurable gwei threshold, toast notification
+- [x] `SecuritySettingsPanel` component with 5 sections: Simulation, Whitelist, Daily Limits, Anomaly, Gas Alerts
+- [x] Security tab added to SwapSettings modal
+- [x] `useSend` updated - replaced fake setTimeout with real chain watcher (Phase 3.3 consistency)
 
 ### Phase 5: UX
 - [ ] Dark/Light Theme

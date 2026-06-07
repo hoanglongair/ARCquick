@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useAccount } from "wagmi";
 import type { Token } from "@/types";
 import { useAppStore } from "@/stores";
+import { useTransactionWatcher } from "@/hooks/use-transaction-watcher";
 
 export type SendStatus =
   | "idle"
@@ -28,6 +29,11 @@ export function useSend() {
   const [status, setStatus] = useState<SendStatus>("idle");
   const [error, setError] = useState<SendError | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [pendingTxHash, setPendingTxHash] = useState<`0x${string}` | null>(null);
+
+  const { isSuccess: txConfirmed } = useTransactionWatcher(pendingTxHash, () => {
+    setStatus("success");
+  });
 
   const validateAddress = useCallback((addr: string): boolean => {
     return /^0x[a-fA-F0-9]{40}$/.test(addr);
@@ -100,6 +106,7 @@ export function useSend() {
     setStatus("idle");
     setError(null);
     setTxHash(null);
+    setPendingTxHash(null);
   }, []);
 
   const sendToken = useCallback(
@@ -144,21 +151,7 @@ export function useSend() {
           chainId: token?.chainId ?? 421614,
         });
 
-        setTimeout(() => {
-          setStatus("success");
-          addTransaction({
-            id: sendHash,
-            type: "send",
-            status: "confirmed",
-            hash: sendHash,
-            fromToken: token?.symbol ?? "ETH",
-            toToken: recipient.slice(0, 6) + "..." + recipient.slice(-4),
-            fromAmount: amount,
-            toAmount: amount,
-            timestamp: Date.now(),
-            chainId: token?.chainId ?? 421614,
-          });
-        }, 2000);
+        setPendingTxHash(sendHash as `0x${string}`);
 
         return { hash: sendHash };
       } catch (err) {
