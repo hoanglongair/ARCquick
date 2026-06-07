@@ -4,8 +4,8 @@ import { Token } from "@/types";
 import { X, Search } from "lucide-react";
 import { Input } from "@/components/ui";
 import { useState, useMemo } from "react";
-import { useAccount, useBalance } from "wagmi";
-import { formatUnits } from "viem";
+import { useAccount } from "wagmi";
+import { useTokenBalance } from "@/hooks/use-token-balance";
 
 interface TokenSelectorProps {
   isOpen: boolean;
@@ -29,7 +29,7 @@ const DEFAULT_TOKENS: Token[] = [
     address: "0x1234567890abcdef1234567890abcdef12345678",
     decimals: 6,
     name: "Euro Coin",
-    icon: "€",
+    icon: "\u20AC",
     chainId: 421614,
     price: 1.08,
   },
@@ -38,7 +38,7 @@ const DEFAULT_TOKENS: Token[] = [
     address: "0x0000000000000000000000000000000000000000",
     decimals: 18,
     name: "Ethereum",
-    icon: "Ξ",
+    icon: "\u039E",
     chainId: 421614,
     price: 2847.5,
   },
@@ -51,7 +51,6 @@ export function TokenSelector({
   excludeToken,
 }: TokenSelectorProps) {
   const [search, setSearch] = useState("");
-  const { address } = useAccount();
 
   const filteredTokens = useMemo(() => {
     return DEFAULT_TOKENS.filter((token) => {
@@ -68,13 +67,11 @@ export function TokenSelector({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal */}
       <div className="relative z-10 w-full max-w-md animate-slide-up rounded-t-2xl border-t border-border bg-popover p-6 sm:rounded-2xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Select Token</h2>
@@ -86,7 +83,6 @@ export function TokenSelector({
           </button>
         </div>
 
-        {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -97,14 +93,9 @@ export function TokenSelector({
           />
         </div>
 
-        {/* Token List */}
         <div className="max-h-64 space-y-1 overflow-y-auto">
           {filteredTokens.map((token) => (
-            <TokenRow
-              key={token.symbol}
-              token={token}
-              onSelect={onSelect}
-            />
+            <TokenRow key={token.symbol} token={token} onSelect={onSelect} />
           ))}
 
           {filteredTokens.length === 0 && (
@@ -126,17 +117,18 @@ function TokenRow({
   onSelect: (token: Token) => void;
 }) {
   const { address } = useAccount();
-  const { data: balance } = useBalance({
+  const { formattedBalance, isLoading } = useTokenBalance({
+    token,
     address,
-    token:
-      token.symbol === "ETH"
-        ? undefined
-        : (token.address as `0x${string}`),
+    watch: true,
   });
 
-  const balanceDisplay = balance
-    ? parseFloat(formatUnits(balance.value, balance.decimals)).toFixed(4)
-    : "0.0000";
+  const getTokenGradient = () => {
+    if (token.symbol === "USDC") return "linear-gradient(135deg, #2775ca, #5badff)";
+    if (token.symbol === "EURC") return "linear-gradient(135deg, #1e3a8a, #3b82f6)";
+    if (token.symbol === "ETH") return "linear-gradient(135deg, #627eea, #a9b3ff)";
+    return "linear-gradient(135deg, #6b7280, #9ca3af)";
+  };
 
   return (
     <button
@@ -146,12 +138,7 @@ function TokenRow({
       <div
         className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold"
         style={{
-          background:
-            token.symbol === "USDC"
-              ? "linear-gradient(135deg, #2775ca, #5badff)"
-              : token.symbol === "EURC"
-                ? "linear-gradient(135deg, #1e3a8a, #3b82f6)"
-                : "linear-gradient(135deg, #627eea, #a9b3ff)",
+          background: getTokenGradient(),
           color: "white",
         }}
       >
@@ -164,7 +151,11 @@ function TokenRow({
       </div>
 
       <div className="text-right">
-        <div className="font-mono font-medium">{balanceDisplay}</div>
+        {isLoading ? (
+          <div className="h-4 w-16 animate-pulse rounded bg-secondary" />
+        ) : (
+          <div className="font-mono font-medium">{formattedBalance}</div>
+        )}
         <div className="text-xs text-muted-foreground">
           ${(token.price ?? 0).toFixed(2)}
         </div>

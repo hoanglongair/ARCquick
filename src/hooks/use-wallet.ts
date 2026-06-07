@@ -6,7 +6,7 @@ import { arcTestnet } from "@/lib/wagmi/config";
 
 export function useWallet() {
   const { address, isConnected, isConnecting } = useAccount();
-  const { connect, connectors, isPending, variables } = useConnect();
+  const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const { switchChain, isPending: isSwitching } = useSwitchChain();
@@ -65,6 +65,6 @@ export function useWallet() {
     connectors,
     isPending,
     isSwitching,
-    pendingConnector: variables?.connector,
+
   };
 }

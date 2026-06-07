@@ -1,14 +1,17 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Token } from "@/types";
+import { useAccount } from "wagmi";
+import type { Token } from "@/types";
+import { getSwapQuote, executeSwap, isValidSwapAmount } from "@/lib/app-kit";
+import { useAppStore } from "@/stores";
 
 const DEFAULT_FROM_TOKEN: Token = {
   symbol: "ETH",
   address: "0x0000000000000000000000000000000000000000",
   decimals: 18,
   name: "Ethereum",
-  icon: "Ξ",
+  icon: "\u039E",
   chainId: 421614,
   price: 2847.5,
 };
@@ -23,67 +26,184 @@ const DEFAULT_TO_TOKEN: Token = {
   price: 1,
 };
 
+export type SwapStatus =
+  | "idle"
+  | "fetching_quote"
+  | "confirming"
+  | "pending"
+  | "success"
+  | "error";
+
+export interface SwapError {
+  code: string;
+  message: string;
+}
+
 export function useSwap() {
+  const { address, isConnected } = useAccount();
+  const { slippageTolerance, addTransaction } = useAppStore();
+
   const [fromToken, setFromToken] = useState<Token>(DEFAULT_FROM_TOKEN);
   const [toToken, setToToken] = useState<Token>(DEFAULT_TO_TOKEN);
   const [quote, setQuote] = useState<{
     toAmount: string;
-    rate: number;
+    exchangeRate: number;
     priceImpact: number;
-    gasEstimate: string;
+    estimatedGas: string;
+    minimumReceived: string;
   } | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<SwapStatus>("idle");
+  const [error, setError] = useState<SwapError | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
 
   const swapTokens = useCallback(() => {
     setFromToken(toToken);
     setToToken(fromToken);
     setQuote(null);
+    setStatus("idle");
+    setError(null);
   }, [fromToken, toToken]);
+
+  const clearError = useCallback(() => {
+    setError(null);
+    setStatus("idle");
+  }, []);
 
   const getQuote = useCallback(
     async (amount: string) => {
       if (!amount || parseFloat(amount) === 0) {
         setQuote(null);
+        setStatus("idle");
         return;
       }
 
-      setIsLoading(true);
+      setStatus("fetching_quote");
+      setError(null);
 
       try {
-        // TODO: Call App Kit SDK for real quote
-        // For now, calculate mock quote
-        const rate = (fromToken.price ?? 0) / (toToken.price ?? 1);
-        const toAmount = (parseFloat(amount) * rate * 0.997).toFixed(
-          toToken.decimals > 6 ? 4 : 2
-        );
+        const result = await getSwapQuote({
+          fromToken,
+          toToken,
+          fromAmount: amount,
+          slippageTolerance,
+        });
 
         setQuote({
-          toAmount,
-          rate,
-          priceImpact: 0.01,
-          gasEstimate: "0.08",
+          toAmount: result.toAmount,
+          exchangeRate: result.exchangeRate,
+          priceImpact: result.priceImpact,
+          estimatedGas: result.estimatedGas,
+          minimumReceived: result.minimumReceived,
         });
-      } catch (error) {
-        console.error("Failed to get quote:", error);
+        setStatus("idle");
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to fetch quote";
+        setError({ code: "QUOTE_ERROR", message });
+        setStatus("error");
         setQuote(null);
-      } finally {
-        setIsLoading(false);
       }
     },
-    [fromToken, toToken]
+    [fromToken, toToken, slippageTolerance]
   );
 
-  const executeSwap = useCallback(async () => {
-    if (!quote) return null;
+  const executeSwapTx = useCallback(
+    async (fromAmount: string) => {
+      if (!address || !isConnected) {
+        setError({ code: "NOT_CONNECTED", message: "Please connect your wallet" });
+        setStatus("error");
+        return null;
+      }
 
-    // TODO: Execute swap via App Kit SDK
-    // This will be implemented in Phase 1.4.5
+      if (!quote) {
+        setError({ code: "NO_QUOTE", message: "Please get a quote first" });
+        setStatus("error");
+        return null;
+      }
 
-    return {
-      hash: "0x" + Math.random().toString(16).slice(2),
-      status: "pending" as const,
-    };
-  }, [quote]);
+      const validation = isValidSwapAmount(fromAmount, "999999999");
+      if (!validation.valid) {
+        setError({ code: "INVALID_AMOUNT", message: validation.error ?? "Invalid amount" });
+        setStatus("error");
+        return null;
+      }
+
+      setStatus("confirming");
+      setError(null);
+
+      try {
+        const result = await executeSwap({
+          quote,
+          fromToken,
+          toToken,
+          fromAmount,
+          walletAddress: address,
+        });
+
+        setTxHash(result.hash);
+        setStatus("pending");
+
+        addTransaction({
+          id: result.hash,
+          type: "swap",
+          status: "pending",
+          hash: result.hash,
+          fromToken: fromToken.symbol,
+          toToken: toToken.symbol,
+          fromAmount,
+          toAmount: quote.toAmount,
+          timestamp: Date.now(),
+          chainId: fromToken.chainId,
+        });
+
+        setTimeout(() => {
+          setStatus("success");
+          addTransaction({
+            id: result.hash,
+            type: "swap",
+            status: "confirmed",
+            hash: result.hash,
+            fromToken: fromToken.symbol,
+            toToken: toToken.symbol,
+            fromAmount,
+            toAmount: quote.toAmount,
+            timestamp: Date.now(),
+            chainId: fromToken.chainId,
+          });
+        }, 2000);
+
+        return result;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Transaction failed";
+        setError({ code: "SWAP_ERROR", message });
+        setStatus("error");
+
+        if (txHash) {
+          addTransaction({
+            id: txHash,
+            type: "swap",
+            status: "failed",
+            hash: txHash,
+            fromToken: fromToken.symbol,
+            toToken: toToken.symbol,
+            fromAmount,
+            toAmount: quote?.toAmount ?? "0",
+            timestamp: Date.now(),
+            chainId: fromToken.chainId,
+          });
+        }
+
+        return null;
+      }
+    },
+    [address, isConnected, quote, fromToken, toToken, addTransaction, txHash]
+  );
+
+  const reset = useCallback(() => {
+    setQuote(null);
+    setStatus("idle");
+    setError(null);
+    setTxHash(null);
+  }, []);
 
   return {
     fromToken,
@@ -92,8 +212,13 @@ export function useSwap() {
     setToToken,
     swapTokens,
     quote,
-    isLoading,
+    status,
+    error,
+    txHash,
+    isLoading: status === "fetching_quote" || status === "confirming",
     getQuote,
-    executeSwap,
+    executeSwap: executeSwapTx,
+    clearError,
+    reset,
   };
 }

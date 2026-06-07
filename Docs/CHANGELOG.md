@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [2026-06-07] - v0.1.0
 
 ### Added
 
@@ -37,12 +37,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     - StatCounter component for animated number counting
     - Toast system with ToastProvider and useToast hook
     - Updated Providers with ToastProvider
+- **Phase 1.3: Token Swap (COMPLETED)**
+  - AppKit SDK swap wrapper (`src/lib/app-kit/swap.ts`) with getSwapQuote, executeSwap, buildSwapTransaction, isValidSwapAmount
+  - useTokenBalance hook for fetching wallet token balances (native ETH + ERC20)
+  - Enhanced TokenBox with MAX button, accurate USD value based on input amount, and balance validation
+  - Enhanced TokenSelector with real wallet balance fetching and proper native ETH handling
+  - Enhanced SwapPage with debounced quote fetching, full execution flow, and all UI states (loading/error/success/pending)
+  - SwapSettings modal for configuring slippage tolerance (0.1%, 0.5%, 1%, custom)
+  - WalletModalProvider and useWalletModal hook for wallet modal state management
+  - slide-up animation for modal components
 
 ### Changed
 
 - Updated PROJECT_STATE.md with project status
 - Updated SYSTEM_KNOWLEDGE.md with business flows
 - Updated package.json with all required dependencies (lucide-react added)
+- Refactored TokenBox to properly display USD values based on input amount (not balance)
+- Fixed TokenSelector to correctly handle native ETH (zero address)
+- Fixed useSwap to use SwapQuote type and implement full quote/execute cycle with status management
+- Fixed app-store Map serialization issue (changed Map to Record for zustand persist)
+- Fixed toast component to remove styled-jsx dependency (incompatible with App Router)
+- Added AppKit swap method and type exports
+- BUILD_PLAN.md task numbering unified with PROJECT_STATE (1.1-1.8)
+- Unlocked Phase 1.3 tasks as complete in BUILD_PLAN
 
 ### Fixed
 

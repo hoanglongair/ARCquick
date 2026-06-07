@@ -112,7 +112,7 @@
 - [ ] 1.4.1 Tạo SwapPage component
   - Layout với token boxes
   - Swap direction toggle
-  
+
 - [ ] 1.4.2 Tạo TokenSelector component
   - Token list modal
   - Search functionality
@@ -578,12 +578,12 @@
 Phase 1 (Foundation)
 ├── 1.1 Project Init
 ├── 1.2 Wallet Connection ──┐
-├── 1.3 App Kit ──────────┼── Core dependencies
-├── 1.4 Token Swap ───────┤
-├── 1.5 Balance Display ───┤
-├── 1.6 Bridge ────────────┤
-├── 1.7 Send ──────────────┤
-└── 1.8 Transaction UI ────┘
+├── 1.3 App Kit ────────────┼── Core dependencies
+├── 1.4 Token Swap ──────────┤
+├── 1.5 Balance Display ─────┤
+├── 1.6 Bridge ──────────────┤
+├── 1.7 Send ────────────────┤
+└── 1.8 Transaction UI ─────┘
 
 Phase 2 (Enhanced)
 ├── 2.1 Auth ──────────────┐

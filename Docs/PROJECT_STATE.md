@@ -13,7 +13,7 @@ Mục tiêu:
 
 ## Current Phase
 
-**Phase 1: Core MVP** - Đang trong quá trình phát triển
+**Phase 1: Core MVP** - Gần hoàn thành (Phase 1.1, 1.2, 1.3 done)
 
 ## Completed Features
 
@@ -39,27 +39,22 @@ Mục tiêu:
 
 ## In Progress Features
 
-### Phase 1.2: Wallet Connection ✅
-- [x] WalletProvider component (sử dụng wagmi có sẵn)
-- [x] ConnectButton component (tích hợp trong Navbar)
-- [x] WalletModal component (MetaMask, WalletConnect, Coinbase)
-- [x] NetworkSwitcher component (Arc Sepolia, Sepolia, Ethereum, Polygon, Arbitrum)
-- [x] useWallet hook
-- [x] Landing page (giữ nguyên design từ index.html)
-
-## In Progress Features
-
-### Phase 1.3: Token Swap
-- [ ] SwapPage component
-- [ ] TokenBox component
-- [ ] TokenSelector component
+### Phase 1.3: Token Swap (App Kit Swap) ✅
+- [x] SwapPage component
+- [x] TokenBox component
+- [x] TokenSelector component
+- [x] Token balance display (useTokenBalance hook)
+- [x] Swap quote + execution (useSwap hook)
+- [x] Swap UI states (loading, error, success, pending)
+- [x] AppKit SDK swap wrapper (getSwapQuote, executeSwap, buildSwapTransaction)
+- [x] SwapSettings modal (slippage tolerance)
 
 ## Pending Features
 
 ### Phase 1: Core MVP
-- [ ] Token Swap (App Kit)
+- [x] ~~Token Swap (App Kit)~~ (Phase 1.3 completed)
+- [x] ~~Token Balance Display~~ (Phase 1.3 completed)
 - [ ] Cross-Chain Bridge
-- [ ] Token Balance Display
 - [ ] Transaction History
 
 ### Phase 2: Enhanced Features

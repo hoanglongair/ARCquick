@@ -197,6 +197,16 @@ body::before {
   animation: fadeUp 0.8s ease both;
 }
 
+/* Slide up animation for modals */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease both;
+}
+
 /* Scroll line animation */
 @keyframes scroll-anim {
   0% { opacity: 0; transform: scaleY(0); transform-origin: top; }

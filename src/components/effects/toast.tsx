@@ -91,7 +91,7 @@ function ToastContainer({
           <span>{toast.message}</span>
         </div>
       ))}
-      <style jsx>{`
+      <style>{`
         @keyframes toastIn {
           from {
             transform: translateY(80px);

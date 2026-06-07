@@ -11,21 +11,19 @@ interface Transaction {
   fromAmount: string;
   toAmount: string;
   timestamp: number;
+  chainId?: number;
 }
 
 interface AppState {
-  // Transaction history
   transactions: Transaction[];
   addTransaction: (tx: Transaction) => void;
   updateTransaction: (id: string, updates: Partial<Transaction>) => void;
   clearTransactions: () => void;
 
-  // UI preferences
   slippageTolerance: number;
   setSlippageTolerance: (value: number) => void;
 
-  // Pending transactions for real-time tracking
-  pendingTxs: Map<string, Transaction>;
+  pendingTxs: Record<string, Transaction>;
   addPendingTx: (tx: Transaction) => void;
   removePendingTx: (id: string) => void;
 }
@@ -52,18 +50,15 @@ export const useAppStore = create<AppState>()(
       setSlippageTolerance: (value) => set({ slippageTolerance: value }),
 
       // Pending transactions
-      pendingTxs: new Map(),
+      pendingTxs: {},
       addPendingTx: (tx) =>
-        set((state) => {
-          const newMap = new Map(state.pendingTxs);
-          newMap.set(tx.id, tx);
-          return { pendingTxs: newMap };
-        }),
+        set((state) => ({
+          pendingTxs: { ...state.pendingTxs, [tx.id]: tx },
+        })),
       removePendingTx: (id) =>
         set((state) => {
-          const newMap = new Map(state.pendingTxs);
-          newMap.delete(id);
-          return { pendingTxs: newMap };
+          const { [id]: _, ...rest } = state.pendingTxs;
+          return { pendingTxs: rest };
         }),
     }),
     {

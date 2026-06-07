@@ -1,46 +1,108 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import { Navbar } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui";
-import { TokenBox } from "@/components/swap/token-box";
-import { TokenSelector } from "@/components/swap/token-selector";
+import { TokenBox, TokenSelector, SwapSettings } from "@/components/swap";
 import { useAccount } from "wagmi";
-import { useState } from "react";
-import { ArrowUpDown, Settings } from "lucide-react";
+import { ArrowUpDown, Settings, Loader2, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useSwap } from "@/hooks/use-swap";
-import { useAppStore } from "@/stores";
+import { useTokenBalance } from "@/hooks/use-token-balance";
+import { useWalletModal } from "@/components/wallet";
 
 export default function SwapPage() {
-  const { isConnected } = useAccount();
-  const { fromToken, toToken, setFromToken, setToToken, swapTokens } =
-    useSwap();
-  const { slippageTolerance } = useAppStore();
+  const { isConnected, address } = useAccount();
+  const { openModal } = useWalletModal();
+
+  const {
+    fromToken,
+    toToken,
+    setFromToken,
+    setToToken,
+    swapTokens,
+    quote,
+    status,
+    error,
+    txHash,
+    isLoading,
+    getQuote,
+    executeSwap,
+    clearError,
+    reset,
+  } = useSwap();
+
   const [showFromSelector, setShowFromSelector] = useState(false);
   const [showToSelector, setShowToSelector] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [fromAmount, setFromAmount] = useState("");
-  const [toAmount, setToAmount] = useState("");
 
-  const handleFlipTokens = () => {
+  const { formattedBalance: fromBalance } = useTokenBalance({
+    token: fromToken,
+    address,
+    watch: true,
+  });
+
+  const { formattedBalance: toBalance } = useTokenBalance({
+    token: toToken,
+    address,
+    watch: true,
+  });
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (fromAmount) {
+        getQuote(fromAmount);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [fromAmount, fromToken, toToken, getQuote]);
+
+  const handleFlipTokens = useCallback(() => {
     swapTokens();
-    setFromAmount(toAmount);
-    setToAmount(fromAmount);
-  };
+    setFromAmount("");
+    reset();
+  }, [swapTokens, reset]);
 
-  const getButtonText = () => {
-    if (!isConnected) return "Connect Wallet";
-    if (!fromAmount || parseFloat(fromAmount) === 0) return "Enter an amount";
-    return `Swap ${fromToken.symbol} → ${toToken.symbol}`;
-  };
+  const handleMaxClick = useCallback(() => {
+    setFromAmount(fromBalance);
+    getQuote(fromBalance);
+  }, [fromBalance, getQuote]);
 
-  const handleSwap = () => {
+  const handleSwap = useCallback(async () => {
     if (!isConnected) {
-      // Open wallet modal - handled by parent
+      openModal();
       return;
     }
     if (!fromAmount || parseFloat(fromAmount) === 0) return;
+    await executeSwap(fromAmount);
+  }, [isConnected, openModal, fromAmount, executeSwap]);
 
-    // TODO: Execute swap via App Kit
+  const getButtonText = () => {
+    if (!isConnected) return "Connect Wallet";
+    if (status === "fetching_quote") return "Fetching Quote...";
+    if (status === "confirming") return "Confirm in Wallet...";
+    if (status === "pending") return "Transaction Pending...";
+    if (status === "success") return "Swap Complete!";
+    if (status === "error") return error?.message ?? "Swap Failed";
+    if (!fromAmount || parseFloat(fromAmount) === 0) return "Enter an amount";
+    if (parseFloat(fromAmount) > parseFloat(fromBalance))
+      return "Insufficient Balance";
+    return `Swap ${fromToken.symbol} → ${toToken.symbol}`;
+  };
+
+  const isButtonDisabled =
+    !isConnected ||
+    !fromAmount ||
+    parseFloat(fromAmount) === 0 ||
+    parseFloat(fromAmount) > parseFloat(fromBalance) ||
+    isLoading ||
+    status === "pending" ||
+    status === "success";
+
+  const handleCloseSuccess = () => {
+    reset();
+    setFromAmount("");
   };
 
   return (
@@ -48,7 +110,6 @@ export default function SwapPage() {
       <Navbar />
       <main className="min-h-screen pt-20">
         <div className="mx-auto max-w-lg px-4 py-12">
-          {/* Header */}
           <div className="mb-8 text-center">
             <h1 className="text-gradient mb-2 text-4xl font-bold">
               Swap Tokens
@@ -58,19 +119,21 @@ export default function SwapPage() {
             </p>
           </div>
 
-          {/* Swap Card */}
           <Card className="relative overflow-hidden">
             <CardContent className="p-6">
-              {/* Token From */}
               <TokenBox
                 label="You Pay"
                 token={fromToken}
                 amount={fromAmount}
-                onAmountChange={setFromAmount}
+                balance={fromBalance}
+                onAmountChange={(v) => {
+                  setFromAmount(v);
+                  clearError();
+                }}
                 onSelect={() => setShowFromSelector(true)}
+                onMaxClick={handleMaxClick}
               />
 
-              {/* Flip Button */}
               <div className="relative z-10 my-2 flex justify-center">
                 <button
                   onClick={handleFlipTokens}
@@ -80,70 +143,126 @@ export default function SwapPage() {
                 </button>
               </div>
 
-              {/* Token To */}
               <TokenBox
                 label="You Receive"
                 token={toToken}
-                amount={toAmount}
-                onAmountChange={setToAmount}
+                amount={quote?.toAmount ?? ""}
+                balance={toBalance}
+                onAmountChange={() => {}}
                 onSelect={() => setShowToSelector(true)}
                 readOnly
               />
 
-              {/* Route Info */}
-              {fromAmount && parseFloat(fromAmount) > 0 && (
+              {quote && status !== "success" && (
                 <div className="mt-4 rounded-lg border border-border bg-secondary/50 p-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Rate</span>
                     <span>
-                      1 {fromToken.symbol} ={" "}
-                      {(parseFloat(fromAmount) / parseFloat(toAmount || "1")).toFixed(
-                        4
-                      )}{" "}
+                      1 {fromToken.symbol} = {quote.exchangeRate.toFixed(4)}{" "}
                       {toToken.symbol}
                     </span>
                   </div>
                   <div className="mt-2 flex justify-between text-sm">
-                    <span className="text-muted-foreground">Slippage</span>
-                    <span>{slippageTolerance}%</span>
+                    <span className="text-muted-foreground">
+                      Min. Received
+                    </span>
+                    <span>
+                      {quote.minimumReceived} {toToken.symbol}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex justify-between text-sm">
+                    <span className="text-muted-foreground">Price Impact</span>
+                    <span
+                      className={
+                        quote.priceImpact > 1 ? "text-yellow-500" : ""
+                      }
+                    >
+                      {quote.priceImpact < 0.01 ? "<0.01" : quote.priceImpact}%
+                    </span>
                   </div>
                   <div className="mt-2 flex justify-between text-sm">
                     <span className="text-muted-foreground">Est. Gas</span>
-                    <span className="text-muted-foreground">~$0.08</span>
+                    <span>~${quote.estimatedGas}</span>
                   </div>
                 </div>
               )}
 
-              {/* Swap Button */}
+              {status === "error" && error && (
+                <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                  <div className="flex items-center gap-2 text-sm text-destructive">
+                    <XCircle className="h-4 w-4" />
+                    <span>{error.message}</span>
+                  </div>
+                </div>
+              )}
+
+              {status === "success" && txHash && (
+                <div className="mt-4 rounded-lg border border-green-500/50 bg-green-500/10 p-4">
+                  <div className="flex items-center gap-2 text-sm text-green-500">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Swap successful!</span>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    Tx: {txHash.slice(0, 10)}...{txHash.slice(-8)}
+                  </div>
+                  <Button
+                    onClick={handleCloseSuccess}
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 h-7 text-xs"
+                  >
+                    New Swap
+                  </Button>
+                </div>
+              )}
+
+              {status === "pending" && (
+                <div className="mt-4 rounded-lg border border-primary/50 bg-primary/10 p-4">
+                  <div className="flex items-center gap-2 text-sm text-primary">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Waiting for confirmation...</span>
+                  </div>
+                </div>
+              )}
+
               <Button
                 onClick={handleSwap}
                 className="mt-4 w-full"
                 size="lg"
-                disabled={!isConnected || !fromAmount || parseFloat(fromAmount) === 0}
+                disabled={isButtonDisabled}
               >
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {getButtonText()}
               </Button>
 
-              {/* Settings Button */}
-              <button className="absolute right-4 top-4 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+              <button
+                onClick={() => setShowSettings(true)}
+                className="absolute right-4 top-4 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
                 <Settings className="h-4 w-4" />
               </button>
             </CardContent>
           </Card>
 
-          {/* Info */}
           <p className="mt-4 text-center text-xs text-muted-foreground">
             Powered by Circle App Kit on Arc Network
           </p>
         </div>
       </main>
 
-      {/* Token Selectors */}
       <TokenSelector
         isOpen={showFromSelector}
         onClose={() => setShowFromSelector(false)}
         onSelect={(token) => {
-          setFromToken(token);
+          if (token.symbol === toToken.symbol) {
+            swapTokens();
+            setFromAmount("");
+            reset();
+          } else {
+            setFromToken(token);
+            setFromAmount("");
+            reset();
+          }
           setShowFromSelector(false);
         }}
         excludeToken={toToken}
@@ -153,10 +272,23 @@ export default function SwapPage() {
         isOpen={showToSelector}
         onClose={() => setShowToSelector(false)}
         onSelect={(token) => {
-          setToToken(token);
+          if (token.symbol === fromToken.symbol) {
+            swapTokens();
+            setFromAmount("");
+            reset();
+          } else {
+            setToToken(token);
+            setFromAmount("");
+            reset();
+          }
           setShowToSelector(false);
         }}
         excludeToken={fromToken}
+      />
+
+      <SwapSettings
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
       />
     </>
   );
