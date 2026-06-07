@@ -6,6 +6,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [2026-06-07] - v0.1.7
+
+### Added
+
+- **Phase 3.4: Advanced Trading**
+  - Advanced trading store (`src/stores/advanced-trading-store.ts`) with Zustand persist for limit + TWAP orders
+  - Limit orders: buy/sell with target price, expiry (1-72h), auto-execution when price crosses threshold
+  - `useLimitOrderChecker` hook polling every price update (30s) to check and execute pending limit orders
+  - TWAP orders: split total amount into 2-12 tranches, configurable interval (15m-4h), auto-execution via `useTwapExecutor` (10s polling)
+  - `AdvancedTradingPanel` component with Limit/TWAP/Routes tabs (`src/components/trading/advanced-trading-panel.tsx`)
+  - `ActiveOrdersPanel` component showing live order cards with cancel/remove/history (`src/components/trading/active-orders-panel.tsx`)
+  - `/trading` page at `src/app/trading/page.tsx` - full order management interface
+  - Best price router (`src/lib/app-kit/router.ts`) comparing 5 routes: AppKit/CCTP, Uniswap V2, Uniswap V3, Curve, Balancer
+  - `RoutesPanel` showing all route quotes with savings calculation vs worst route
+  - Navbar updated with TRADING link
+  - Order executors auto-enabled via `Providers` (`useLimitOrderChecker`, `useTwapExecutor`)
+
+---
+
+## [2026-06-07] - v0.1.6
+
+### Added
+
+- **Phase 3.3: Real-time Updates**
+  - `usePriceFeed` hook (`src/hooks/use-price-feed.ts`) fetching from CoinGecko API with 30s auto-refresh, supports ETH/USDC/EURC/WETH/USDT/DAI/ARB/MATIC
+  - `useTokenPrice` hook for individual token price queries
+  - `usePriceAlertChecker` hook for auto-triggering alerts on price movements
+  - Price alerts store (`src/stores/price-alert-store.ts`) with Zustand persist, supports above/below conditions, max 50 alerts
+  - `PriceAlertPanel` component (`src/components/alerts/price-alert-panel.tsx`) with create/remove/reset/clear triggered alerts
+  - Price alerts integrated into SwapSettings modal as "Alerts" tab
+  - `useTransactionWatcher` hook (`src/hooks/use-transaction-watcher.ts`) for real on-chain tx confirmation monitoring via wagmi `useWaitForTransactionReceipt`
+
+### Changed
+
+- `useSwap` hook - replaced fake `setTimeout` with real on-chain tx status monitoring (`useTransactionWatcher`)
+- `useBridge` hook - replaced fake `setTimeout` with real on-chain tx status monitoring (`useTransactionWatcher`)
+- Toast now shows "Transaction confirmed on-chain!" or "Transaction failed" on chain confirmation/failure
+- `Providers` component now includes `RealtimeListeners` for background price alert checking
+- `src/hooks/index.ts` exports updated with new hooks
+
+---
+
 ## [2026-06-07] - v0.1.5
 
 ### Added

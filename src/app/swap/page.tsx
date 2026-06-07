@@ -119,6 +119,16 @@ export default function SwapPage() {
             </p>
           </div>
 
+          <div className="mb-4 flex items-center justify-end gap-2">
+            <button
+              onClick={() => setShowSettings(true)}
+              className="rounded-lg p-2 text-muted-foreground hover:bg-secondary transition-colors"
+              title="Settings"
+            >
+              <Settings className="h-5 w-5" />
+            </button>
+          </div>
+
           <Card className="relative overflow-hidden">
             <CardContent className="p-6">
               <TokenBox
@@ -234,13 +244,6 @@ export default function SwapPage() {
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {getButtonText()}
               </Button>
-
-              <button
-                onClick={() => setShowSettings(true)}
-                className="absolute right-4 top-4 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              >
-                <Settings className="h-4 w-4" />
-              </button>
             </CardContent>
           </Card>
 

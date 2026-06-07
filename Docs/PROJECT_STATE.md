@@ -13,7 +13,7 @@ Mục tiêu:
 
 ## Current Phase
 
-**Phase 2: Enhanced Features** - COMPLETED! Moving to Phase 3.
+**Phase 3: Advanced** - 3.1✅ 3.2✅ 3.3✅ 3.4✅ COMPLETED!
 
 ## Completed Features
 
@@ -127,11 +127,29 @@ Mục tiêu:
 
 **Phase 2 COMPLETED!**
 
-### Phase 3: Advanced
-- [x] ~~Send Money~~ (Phase 3.1 completed)
-- [x] ~~Unified Balance~~ (Phase 3.2 completed)
-- [ ] Real-time Updates (Phase 3.3)
-- [ ] Advanced Trading (Phase 3.4)
+### Phase 3.3: Real-time Updates ✅
+- [x] `usePriceFeed` hook (CoinGecko API, 30s polling)
+- [x] `useTokenPrice` hook for individual token prices
+- [x] Price alerts store (`src/stores/price-alert-store.ts`) with Zustand persist
+- [x] `PriceAlertPanel` component with create/remove/reset alerts
+- [x] Price alerts integrated into Settings modal (Alerts tab)
+- [x] `usePriceAlertChecker` hook - auto-triggers toast when price hits target
+- [x] `useTransactionWatcher` hook - real on-chain tx confirmation monitoring
+- [x] `useSwap` + `useBridge` updated - replaced fake setTimeout with real chain watcher
+- [x] Price alert checker auto-enabled via `Providers`
+
+### Phase 3.4: Advanced Trading ✅
+- [x] Limit orders store (`src/stores/advanced-trading-store.ts`) with Zustand persist, buy/sell, target price, expiry
+- [x] `useLimitOrderChecker` hook - auto-executes limit orders when price crosses target
+- [x] TWAP orders support in store - split orders into configurable tranches (2-12), interval 15m-4h
+- [x] `useTwapExecutor` hook - auto-executes TWAP tranches on schedule (10s polling)
+- [x] `AdvancedTradingPanel` component - Limit/TWAP/Routes tabs with create forms
+- [x] `ActiveOrdersPanel` component - live order cards with cancel/remove/history
+- [x] `/trading` page with full order management UI
+- [x] Best price router (`src/lib/app-kit/router.ts`) - compares 5 routes (AppKit, Uniswap V2/V3, Curve, Balancer) with fee-adjusted pricing
+- [x] `RoutesPanel` - shows all route quotes with best route highlighted
+- [x] Navbar updated with TRADING link
+- [x] Order checkers auto-enabled via `Providers`
 
 ### Phase 4: Security
 - [ ] Transaction Simulation

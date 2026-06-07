@@ -63,6 +63,9 @@ export function Navbar() {
             <Link href="/guide" className="nav-link text-xs font-medium uppercase tracking-widest" style={{ color: "rgba(240,244,248,0.45)" }}>
               GUIDE
             </Link>
+            <Link href="/trading" className="nav-link text-xs font-medium uppercase tracking-widest" style={{ color: "rgba(240,244,248,0.45)" }}>
+              TRADING
+            </Link>
           </div>
 
           <div className="flex items-center gap-3">

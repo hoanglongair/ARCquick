@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAccount } from "wagmi";
 import type { Token } from "@/types";
 import { getSwapQuote, executeSwap, isValidSwapAmount } from "@/lib/app-kit";
 import { useAppStore } from "@/stores";
+import { useTransactionWatcher } from "@/hooks/use-transaction-watcher";
 
 const DEFAULT_FROM_TOKEN: Token = {
   symbol: "ETH",
@@ -55,6 +56,11 @@ export function useSwap() {
   const [status, setStatus] = useState<SwapStatus>("idle");
   const [error, setError] = useState<SwapError | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [pendingTxHash, setPendingTxHash] = useState<`0x${string}` | null>(null);
+
+  const { isSuccess: txConfirmed } = useTransactionWatcher(pendingTxHash, () => {
+    setStatus("success");
+  });
 
   const swapTokens = useCallback(() => {
     setFromToken(toToken);
@@ -155,21 +161,7 @@ export function useSwap() {
           chainId: fromToken.chainId,
         });
 
-        setTimeout(() => {
-          setStatus("success");
-          addTransaction({
-            id: result.hash,
-            type: "swap",
-            status: "confirmed",
-            hash: result.hash,
-            fromToken: fromToken.symbol,
-            toToken: toToken.symbol,
-            fromAmount,
-            toAmount: quote.toAmount,
-            timestamp: Date.now(),
-            chainId: fromToken.chainId,
-          });
-        }, 2000);
+        setPendingTxHash(result.hash as `0x${string}`);
 
         return result;
       } catch (err) {
@@ -203,6 +195,7 @@ export function useSwap() {
     setStatus("idle");
     setError(null);
     setTxHash(null);
+    setPendingTxHash(null);
   }, []);
 
   return {

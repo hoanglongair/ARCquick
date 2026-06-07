@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { X, Fuel, Clock, Zap } from "lucide-react";
+import { X, Fuel, Clock, Zap, BellRing } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useAppStore } from "@/stores";
+import { PriceAlertPanel } from "@/components/alerts/price-alert-panel";
 
 interface SwapSettingsProps {
   isOpen: boolean;
@@ -26,7 +27,7 @@ export function SwapSettings({ isOpen, onClose }: SwapSettingsProps) {
 
   const [localSlippage, setLocalSlippage] = useState(slippageTolerance);
   const [localDeadline, setLocalDeadline] = useState(txDeadline);
-  const [activeTab, setActiveTab] = useState<"swap" | "advanced">("swap");
+  const [activeTab, setActiveTab] = useState<"swap" | "advanced" | "alerts">("swap");
 
   const handleSave = () => {
     setSlippageTolerance(localSlippage);
@@ -73,6 +74,16 @@ export function SwapSettings({ isOpen, onClose }: SwapSettingsProps) {
             }`}
           >
             Advanced
+          </button>
+          <button
+            onClick={() => setActiveTab("alerts")}
+            className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              activeTab === "alerts"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-secondary/80"
+            }`}
+          >
+            Alerts
           </button>
         </div>
 
@@ -167,9 +178,7 @@ export function SwapSettings({ isOpen, onClose }: SwapSettingsProps) {
                         : "bg-secondary hover:bg-secondary/80"
                     }`}
                   >
-                    {pref === "slow" && <Zap className="h-4 w-4" />}
-                    {pref === "normal" && <Zap className="h-4 w-4" />}
-                    {pref === "fast" && <Zap className="h-4 w-4" />}
+                    <Zap className="h-4 w-4" />
                     {pref.charAt(0).toUpperCase() + pref.slice(1)}
                     {pref === "slow" && (
                       <span className="text-[10px] opacity-70">Cheap</span>
@@ -185,6 +194,10 @@ export function SwapSettings({ isOpen, onClose }: SwapSettingsProps) {
               </div>
             </div>
           </div>
+        )}
+
+        {activeTab === "alerts" && (
+          <PriceAlertPanel isOpen={true} onClose={() => {}} />
         )}
 
         <div className="mt-6">

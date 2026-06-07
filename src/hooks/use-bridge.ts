@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAccount } from "wagmi";
 import type { BridgeChain } from "@/lib/app-kit/bridge-chains";
 import {
@@ -10,6 +10,7 @@ import {
   isSameChain,
 } from "@/lib/app-kit/bridge";
 import { useAppStore } from "@/stores";
+import { useTransactionWatcher } from "@/hooks/use-transaction-watcher";
 
 export type BridgeStatus =
   | "idle"
@@ -44,6 +45,11 @@ export function useBridge() {
   const [status, setStatus] = useState<BridgeStatus>("idle");
   const [error, setError] = useState<BridgeError | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [pendingTxHash, setPendingTxHash] = useState<`0x${string}` | null>(null);
+
+  const { isSuccess: txConfirmed } = useTransactionWatcher(pendingTxHash, () => {
+    setStatus("success");
+  });
 
   const initializeChains = useCallback(() => {
     const { SUPPORTED_BRIDGE_CHAINS, getChainById } = require("@/lib/app-kit/bridge-chains");
@@ -73,6 +79,7 @@ export function useBridge() {
     setStatus("idle");
     setError(null);
     setTxHash(null);
+    setPendingTxHash(null);
     setFromAmount("");
   }, []);
 
@@ -187,21 +194,7 @@ export function useBridge() {
           chainId: fromChain.id,
         });
 
-        setTimeout(() => {
-          setStatus("success");
-          addTransaction({
-            id: result.hash,
-            type: "bridge",
-            status: "confirmed",
-            hash: result.hash,
-            fromToken: fromChain.name,
-            toToken: toChain.name,
-            fromAmount: amount,
-            toAmount: quote.toAmount,
-            timestamp: Date.now(),
-            chainId: fromChain.id,
-          });
-        }, 3000);
+        setPendingTxHash(result.hash as `0x${string}`);
 
         return result;
       } catch (err) {

@@ -7,7 +7,17 @@ import { AppKitProvider } from "@/lib/app-kit/provider";
 import { ToastProvider } from "@/components/effects";
 import { WalletModalProvider } from "@/components/wallet";
 import { AuthProvider } from "@/lib/supabase";
+import { usePriceAlertChecker } from "@/hooks/use-price-alert-checker";
+import { useLimitOrderChecker } from "@/hooks/use-limit-order-checker";
+import { useTwapExecutor } from "@/hooks/use-twap-executor";
 import { useState } from "react";
+
+function RealtimeListeners() {
+  usePriceAlertChecker();
+  useLimitOrderChecker();
+  useTwapExecutor();
+  return null;
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -27,6 +37,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <AppKitProvider>
           <ToastProvider>
+            <RealtimeListeners />
             <WalletModalProvider>
               <AuthProvider>
                 {children}

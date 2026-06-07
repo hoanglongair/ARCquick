@@ -144,19 +144,58 @@ User navigates to /assets
   → Real-time balance refresh on page visit
 ```
 
+**12. Price Alerts Flow**
+```
+User opens Settings modal → Alerts tab
+  → Create alert: select token (ETH/USDC/EURC), condition (above/below), target price
+  → Alert stored in Zustand (persisted)
+  → Price feed polls CoinGecko every 30s
+  → Alert checker runs on each price update
+  → When price crosses threshold: toast notification + alert marked as triggered
+  → User can reset, remove, or clear triggered alerts
+```
+
+**13. Transaction Live Tracking Flow**
+```
+User executes swap/bridge
+  → Tx hash captured, pending status shown
+  → useTransactionWatcher polls chain every 2s for confirmation
+  → On confirm: "Transaction confirmed on-chain!" toast
+  → On fail: "Transaction failed" toast + tx marked failed
+```
+
+**14. Advanced Trading Flow**
+```
+User opens /trading page or Trading tab
+  → Create limit order: select pair, side (buy/sell), target price, expiry
+  → Limit order stored in Zustand (persisted)
+  → useLimitOrderChecker polls price feed every 30s
+  → When price crosses target: auto-execute swap, show toast, mark completed
+
+  → Create TWAP order: total amount, tranche count (2-12), interval (15m-4h)
+  → TWAP stored in Zustand (persisted)
+  → useTwapExecutor polls every 10s, executes tranche when interval passes
+  → Each tranche: swap + toast notification
+  → Last tranche: mark TWAP completed
+
+  → Compare routes: enter amount, see all 5 route quotes with best highlighted
+```
+
 ### Domain Rules
 
 **1. Token Rules**
 - Default token: ETH/USDC (primary on Arc)
 - Supported tokens: ETH, USDC, EURC, WETH, USDT, DAI, ARB, MATIC
 - Token balances fetched from Arc RPC via viem
-- Prices fetched from price feed (mock/static for testnet)
+- Prices fetched from CoinGecko API (`usePriceFeed` hook, 30s polling)
+- Price alerts stored in Zustand (localStorage persist, up to 50 alerts)
 
 **2. Transaction Rules**
 - All transactions require wallet connection
 - Gas paid in native token of the chain
 - Transaction history stored in Zustand (localStorage persist)
-- Pending txs tracked separately until confirmed/failed
+- Pending txs tracked via `useTransactionWatcher` hook with on-chain monitoring (polling every 2s)
+- Toast notifications on tx confirmation/failure
 - Transaction history supports swap, bridge, and send types
 
 **3. Bridge Rules**
