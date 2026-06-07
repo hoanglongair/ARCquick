@@ -75,31 +75,81 @@ User enters recipient address
   → Show pending → Confirmed
 ```
 
+**5. User Authentication Flow**
+```
+User clicks "Sign In"
+  → Open auth modal
+  → User enters email + password
+  → Validate inputs
+  → Submit to Supabase Auth
+  → On success: Update user state, close modal
+  → On failure: Show error message
+  → Optional: Link wallet address to account
+```
+
+**6. Advanced Swap Settings Flow**
+```
+User opens Settings from Swap page
+  → Configure slippage tolerance (0.1% - 50%)
+  → Configure transaction deadline (1-60 min)
+  → Set gas preference (slow/normal/fast)
+  → Settings persisted to localStorage
+  → Applied to all subsequent swap transactions
+```
+
+**7. Multi-Network Support Flow**
+```
+User switches network via NetworkSwitcher
+  → Detect current chain
+  → Update available features per chain
+  → Update supported token list
+  → Refresh balances for new chain
+```
+
+**8. Analytics Dashboard Flow**
+```
+User navigates to /dashboard
+  → Fetch transaction history from local store
+  → Calculate aggregated stats (volume, gas, success rate)
+  → Generate volume chart (12 months)
+  → Generate transaction type breakdown
+  → Display with animated counters
+```
+
 ### Domain Rules
 
 **1. Token Rules**
-- Default token: USDC (primary stablecoin on Arc)
-- Supported tokens: USDC, EURC, cirBTC (testnet)
-- Token balances fetched from Arc RPC
-- Prices calculated from exchange rates
+- Default token: ETH/USDC (primary on Arc)
+- Supported tokens: ETH, USDC, EURC, WETH, USDT, DAI, ARB, MATIC
+- Token balances fetched from Arc RPC via viem
+- Prices fetched from price feed (mock/static for testnet)
 
 **2. Transaction Rules**
 - All transactions require wallet connection
-- Gas paid in USDC (on Arc)
-- Sub-second finality - no waiting for confirmations
-- Transaction history stored locally and in database
+- Gas paid in native token of the chain
+- Transaction history stored in Zustand (localStorage persist)
+- Pending txs tracked separately until confirmed/failed
+- Transaction history supports swap, bridge, and send types
 
 **3. Bridge Rules**
 - Minimum bridge amount: varies by chain
 - Bridge fees: ~0 (CCTP) + gas
 - Estimated time: depends on destination chain
-- Only USDC supported for bridge (testnet)
+- Supported tokens: USDC, ETH (where applicable)
+- Destination address can differ from source
 
 **4. Security Rules**
 - Non-custodial: users control their keys
 - No private keys stored
 - Transaction signing happens in wallet
 - MEV protection via Arc network
+- Email/password auth via Supabase (optional, not required for core features)
+
+**5. User Settings Rules**
+- Slippage tolerance: 0.01% - 50%, default 0.5%
+- Transaction deadline: 1-60 minutes, default 20
+- Gas preference: slow/normal/fast, default normal
+- Settings persisted per-device via localStorage
 
 ### System Behaviors
 

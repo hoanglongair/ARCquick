@@ -137,11 +137,41 @@ Trước khi kết thúc session, đảm bảo:
 - [ ] Tất cả files đã save
 
 
-## Impotant!!!
+## Important!!!
+
 Before reading the entire codebase, always read:
 
-1. docs/PROJECT_STATE.md
-2. docs/SYSTEM_KNOWLEDGE.md
-3. docs/ARCHITECTURE.md
+1. docs/PROJECT_STATE.md (trạng thái dự án hiện tại - PHẢI đọc trước)
+2. docs/SYSTEM_KNOWLEDGE.md (business flows)
+3. docs/ARCHITECTURE.md (cấu trúc kỹ thuật)
 
 Only scan source code when required.
+
+## Current Phase Tracking
+
+Luôn giữ PROJECT_STATE.md khớp với trạng thái thực tế. Trước mỗi task:
+
+1. Đọc PROJECT_STATE.md để biết đang ở phase nào
+2. Check "In Progress Features" trước khi bắt đầu
+3. Check "Pending Features" để biết còn gì phải làm
+4. Sau task: update PROJECT_STATE.md + CHANGELOG.md + build verify
+
+## Project Phase Overview
+
+```
+Phase 1: Core MVP         ✅ COMPLETED
+Phase 2: Enhanced Features ✅ COMPLETED
+Phase 3: Advanced          ⏳ IN PROGRESS (next)
+Phase 4: Security          ⏳ PENDING
+Phase 5: UX               ⏳ PENDING
+```
+
+## Quick Reference - File Locations
+
+- Components chính: `src/components/`
+- Hooks: `src/hooks/`
+- Stores (Zustand): `src/stores/`
+- Lib utilities: `src/lib/`
+- Pages/routes: `src/app/`
+- Docs: `Docs/`
+- Rules: `Rules/`
