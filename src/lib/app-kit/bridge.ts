@@ -1,6 +1,7 @@
 "use client";
 
 import type { BridgeChain } from "./bridge-chains";
+import { ARC_TESTNET_CONFIG, isArcTestnet } from "@/lib/wagmi/chains";
 
 interface BridgeParams {
   fromChain: BridgeChain;
@@ -16,12 +17,15 @@ interface BridgeQuote {
   estimatedTime: string;
   bridgeFee: string;
   minimumReceived: string;
+  finalityType: "deterministic" | "probabilistic";
+  cctpDomain?: number;
 }
 
 interface BridgeResult {
   hash: string;
   fromTxHash?: string;
   toTxHash?: string;
+  cctpAttestation?: string;
 }
 
 export async function getBridgeQuote(params: BridgeParams): Promise<BridgeQuote> {
@@ -32,16 +36,26 @@ export async function getBridgeQuote(params: BridgeParams): Promise<BridgeQuote>
   }
 
   const bridgeFee = (parseFloat(fromAmount) * 0.0001).toFixed(2);
-  const estimatedGas = 0.002;
-  const netAmount = parseFloat(fromAmount) - parseFloat(bridgeFee) - estimatedGas;
+  const estimatedGasUsdc = 0.002;
+  const netAmount = parseFloat(fromAmount) - parseFloat(bridgeFee) - estimatedGasUsdc;
+
+  const isArcBridge =
+    isArcTestnet(fromChain.id) || isArcTestnet(toChain.id);
 
   let estimatedTime: string;
-  if (toChain.id === 421614) {
+  let finalityType: "deterministic" | "probabilistic";
+  let cctpDomain: number | undefined;
+
+  if (isArcBridge) {
     estimatedTime = "~1 second";
+    finalityType = "deterministic";
+    cctpDomain = ARC_TESTNET_CONFIG.cctpDomain;
   } else if (toChain.id === 42161 || toChain.id === 137) {
     estimatedTime = "~10-15 minutes";
+    finalityType = "probabilistic";
   } else {
     estimatedTime = "~15-30 minutes";
+    finalityType = "probabilistic";
   }
 
   const isSameNative =
@@ -54,6 +68,8 @@ export async function getBridgeQuote(params: BridgeParams): Promise<BridgeQuote>
     estimatedTime,
     bridgeFee,
     minimumReceived: Math.max(0, netAmount * 0.995).toFixed(2),
+    finalityType,
+    cctpDomain,
   };
 }
 
@@ -79,12 +95,16 @@ export async function executeBridge(params: {
     Math.random().toString(36).slice(2, 8),
   ].join("-");
 
+  const useCctp =
+    isArcTestnet(fromChain.id) || isArcTestnet(toChain.id);
+
   const burnTxHash = `0x${Buffer.from(
     JSON.stringify({
-      type: "CCTP_BURN",
+      type: useCctp ? "CCTP_BURN" : "BRIDGE_BURN",
       bridgeId,
       fromChain: fromChain.id,
       toChain: toChain.id,
+      cctpDomain: useCctp ? ARC_TESTNET_CONFIG.cctpDomain : undefined,
       wallet: destinationAddress ?? walletAddress,
       timestamp: Date.now(),
     })
@@ -95,6 +115,7 @@ export async function executeBridge(params: {
   return {
     hash: burnTxHash,
     fromTxHash: burnTxHash,
+    cctpAttestation: useCctp ? `0x${bridgeId}-attestation` : undefined,
   };
 }
 
@@ -106,13 +127,21 @@ export function buildBridgeTransaction(params: {
   walletAddress: string;
   destinationAddress?: string;
 }) {
-  const { fromChain, fromToken } = params;
+  const { fromChain, fromToken, toChain } = params;
+
+  const useCctp =
+    isArcTestnet(fromChain.id) || isArcTestnet(toChain.id);
+
+  const targetContract = useCctp
+    ? ARC_TESTNET_CONFIG.contracts.tokenMessengerV2
+    : fromToken;
 
   return {
-    to: fromToken,
+    to: targetContract,
     data: "0x",
     value: "0",
-    description: `Bridge from ${fromChain.name}`,
+    description: `Bridge from ${fromChain.name} to ${toChain.name}${useCctp ? " via CCTP" : ""}`,
+    cctpDomain: useCctp ? ARC_TESTNET_CONFIG.cctpDomain : undefined,
   };
 }
 
@@ -142,4 +171,13 @@ export function isValidBridgeAmount(
 
 export function isSameChain(a: BridgeChain, b: BridgeChain): boolean {
   return a.id === b.id;
+}
+
+export function getRequiredConfirmations(chainId: number): number {
+  if (isArcTestnet(chainId)) {
+    return ARC_TESTNET_CONFIG.requiredConfirmations;
+  }
+  if (chainId === 1) return 64;
+  if (chainId === 42161 || chainId === 137) return 20;
+  return 12;
 }

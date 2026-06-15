@@ -2,7 +2,9 @@
 
 import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain, useBalance } from "wagmi";
 import { useCallback } from "react";
-import { arcTestnet } from "@/lib/wagmi/config";
+import { arcSepolia, arcTestnet, isArcChain, isArcTestnet } from "@/lib/wagmi/index";
+
+const ARC_CHAIN_IDS = [arcSepolia.id, arcTestnet.id] as const;
 
 export function useWallet() {
   const { address, isConnected, isConnecting } = useAccount();
@@ -11,22 +13,33 @@ export function useWallet() {
   const chainId = useChainId();
   const { switchChain, isPending: isSwitching } = useSwitchChain();
 
-  // Get ETH balance on current chain
+  // Get native balance on current chain
   const { data: ethBalance } = useBalance({
     address,
   });
 
-  const isOnArcNetwork = chainId === arcTestnet.id;
+  const isOnArcNetwork = isArcChain(chainId);
+  const onArcTestnet = isArcTestnet(chainId);
 
   const switchToArc = useCallback(async () => {
     if (switchChain && !isOnArcNetwork) {
       try {
-        switchChain({ chainId: arcTestnet.id });
+        switchChain({ chainId: arcSepolia.id });
       } catch (error) {
         console.error("Failed to switch to Arc network:", error);
       }
     }
   }, [switchChain, isOnArcNetwork]);
+
+  const switchToArcTestnet = useCallback(async () => {
+    if (switchChain) {
+      try {
+        switchChain({ chainId: arcTestnet.id });
+      } catch (error) {
+        console.error("Failed to switch to Arc Testnet:", error);
+      }
+    }
+  }, [switchChain]);
 
   const connectWallet = useCallback(
     (connectorId?: string) => {
@@ -47,20 +60,22 @@ export function useWallet() {
     address,
     isConnected,
     isConnecting,
-    
+
     // Chain state
     chainId,
     isOnArcNetwork,
+    onArcTestnet,
     currentChain: chainId,
-    
+
     // Balance
     ethBalance,
-    
+
     // Actions
     connect: connectWallet,
     disconnect: disconnectWallet,
     switchToArc,
-    
+    switchToArcTestnet,
+
     // Connectors
     connectors,
     isPending,
