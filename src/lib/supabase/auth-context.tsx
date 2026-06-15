@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useRef,
   ReactNode,
 } from "react";
 import type { User, Session } from "@supabase/supabase-js";
@@ -14,6 +15,7 @@ interface AuthContextValue {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  isMounted: boolean;
   isConfigured: boolean;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -27,9 +29,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !isMounted) {
       setIsLoading(false);
       return;
     }
@@ -48,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isMounted]);
 
   const signUp = async (email: string, password: string) => {
     if (!isSupabaseConfigured) return { error: new Error("Supabase not configured") };
@@ -81,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         session,
         isLoading,
+        isMounted,
         isConfigured: isSupabaseConfigured,
         signUp,
         signIn,
@@ -100,6 +108,7 @@ export function useAuth() {
       user: null,
       session: null,
       isLoading: false,
+      isMounted: true,
       isConfigured: false,
       signUp: async () => ({ error: null }),
       signIn: async () => ({ error: null }),
