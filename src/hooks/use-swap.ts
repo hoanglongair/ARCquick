@@ -1,31 +1,15 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useAccount, useSendTransaction, useWriteContract } from "wagmi";
+import { erc20Abi, parseUnits } from "viem";
 import type { Token } from "@/types";
-import { getSwapQuote, executeSwap, isValidSwapAmount } from "@/lib/app-kit";
+import { isValidSwapAmount } from "@/lib/app-kit";
+import { TOKENS, isNativeTokenAddress } from "@/lib/tokens";
 import { useAppStore } from "@/stores";
 import { useTransactionWatcher } from "@/hooks/use-transaction-watcher";
 
-const DEFAULT_FROM_TOKEN: Token = {
-  symbol: "ETH",
-  address: "0x0000000000000000000000000000000000000000",
-  decimals: 18,
-  name: "Ethereum",
-  icon: "\u039E",
-  chainId: 421614,
-  price: 2847.5,
-};
-
-const DEFAULT_TO_TOKEN: Token = {
-  symbol: "USDC",
-  address: "0x036aBf8B88F8C4bDe3d5C2c7a6D7C8a8C9B0D1E",
-  decimals: 6,
-  name: "USD Coin",
-  icon: "$",
-  chainId: 421614,
-  price: 1,
-};
+const PENDING_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 export type SwapStatus =
   | "idle"
@@ -42,10 +26,13 @@ export interface SwapError {
 
 export function useSwap() {
   const { address, isConnected } = useAccount();
-  const { slippageTolerance, addTransaction } = useAppStore();
+  const { slippageTolerance, addTransaction, updateTransaction } = useAppStore();
 
-  const [fromToken, setFromToken] = useState<Token>(DEFAULT_FROM_TOKEN);
-  const [toToken, setToToken] = useState<Token>(DEFAULT_TO_TOKEN);
+  const { sendTransactionAsync } = useSendTransaction();
+  const { writeContractAsync } = useWriteContract();
+
+  const [fromToken, setFromToken] = useState<Token>(TOKENS.ETH);
+  const [toToken, setToToken] = useState<Token>(TOKENS.USDC);
   const [quote, setQuote] = useState<{
     toAmount: string;
     exchangeRate: number;
@@ -58,9 +45,43 @@ export function useSwap() {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [pendingTxHash, setPendingTxHash] = useState<`0x${string}` | null>(null);
 
-  const { isSuccess: txConfirmed } = useTransactionWatcher(pendingTxHash, () => {
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useTransactionWatcher(pendingTxHash, () => {
     setStatus("success");
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
   });
+
+  const clearPendingTimeout = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  const startPendingTimeout = useCallback(
+    (hash: string) => {
+      clearPendingTimeout();
+      timeoutRef.current = setTimeout(() => {
+        setError({
+          code: "PENDING_TIMEOUT",
+          message:
+            "Transaction is taking too long to confirm. Check the explorer for status.",
+        });
+        setStatus("error");
+        updateTransaction(hash, { status: "failed" });
+        setPendingTxHash(null);
+      }, PENDING_TIMEOUT_MS);
+    },
+    [clearPendingTimeout, updateTransaction]
+  );
+
+  useEffect(() => {
+    return () => clearPendingTimeout();
+  }, [clearPendingTimeout]);
 
   const swapTokens = useCallback(() => {
     setFromToken(toToken);
@@ -87,19 +108,24 @@ export function useSwap() {
       setError(null);
 
       try {
-        const result = await getSwapQuote({
-          fromToken,
-          toToken,
-          fromAmount: amount,
-          slippageTolerance,
-        });
+        const fromPrice = fromToken.price ?? 1;
+        const toPrice = toToken.price ?? 1;
+        const rate = fromPrice / toPrice;
+        const toAmountFloat = parseFloat(amount) * rate;
+        const toAmount = toAmountFloat.toFixed(toToken.decimals > 6 ? 4 : 2);
+        const slippageFactor = 1 - slippageTolerance / 100;
+        const minimumReceived = (toAmountFloat * slippageFactor).toFixed(
+          toToken.decimals > 6 ? 4 : 2
+        );
+        const estimatedGas = isNativeTokenAddress(fromToken.address) ? "0.002" : "0.008";
+        const priceImpact = Math.abs(rate - 1) > 0.05 ? 0.1 : 0.01;
 
         setQuote({
-          toAmount: result.toAmount,
-          exchangeRate: result.exchangeRate,
-          priceImpact: result.priceImpact,
-          estimatedGas: result.estimatedGas,
-          minimumReceived: result.minimumReceived,
+          toAmount,
+          exchangeRate: rate,
+          priceImpact,
+          estimatedGas,
+          minimumReceived,
         });
         setStatus("idle");
       } catch (err) {
@@ -135,24 +161,38 @@ export function useSwap() {
 
       setStatus("confirming");
       setError(null);
+      clearPendingTimeout();
 
       try {
-        const result = await executeSwap({
-          quote,
-          fromToken,
-          toToken,
-          fromAmount,
-          walletAddress: address,
-        });
+        const valueWei = parseUnits(fromAmount, fromToken.decimals);
+        let hash: `0x${string}`;
 
-        setTxHash(result.hash);
+        if (isNativeTokenAddress(fromToken.address)) {
+          // Native token: self-transfer to the connected wallet.
+          // In a real DEX, this would call a router contract.
+          hash = await sendTransactionAsync({
+            to: address,
+            value: valueWei,
+          });
+        } else {
+          // ERC20: call transfer on the token contract.
+          // In a real DEX this would approve the router contract.
+          hash = await writeContractAsync({
+            address: fromToken.address as `0x${string}`,
+            abi: erc20Abi,
+            functionName: "transfer",
+            args: [address, valueWei],
+          });
+        }
+
+        setTxHash(hash);
         setStatus("pending");
 
         addTransaction({
-          id: result.hash,
+          id: hash,
           type: "swap",
           status: "pending",
-          hash: result.hash,
+          hash,
           fromToken: fromToken.symbol,
           toToken: toToken.symbol,
           fromAmount,
@@ -161,42 +201,46 @@ export function useSwap() {
           chainId: fromToken.chainId,
         });
 
-        setPendingTxHash(result.hash as `0x${string}`);
+        setPendingTxHash(hash);
+        startPendingTimeout(hash);
 
-        return result;
+        return { hash };
       } catch (err) {
         const message = err instanceof Error ? err.message : "Transaction failed";
         setError({ code: "SWAP_ERROR", message });
         setStatus("error");
 
         if (txHash) {
-          addTransaction({
-            id: txHash,
-            type: "swap",
-            status: "failed",
-            hash: txHash,
-            fromToken: fromToken.symbol,
-            toToken: toToken.symbol,
-            fromAmount,
-            toAmount: quote?.toAmount ?? "0",
-            timestamp: Date.now(),
-            chainId: fromToken.chainId,
-          });
+          updateTransaction(txHash, { status: "failed" });
         }
 
         return null;
       }
     },
-    [address, isConnected, quote, fromToken, toToken, addTransaction, txHash]
+    [
+      address,
+      isConnected,
+      quote,
+      fromToken,
+      toToken,
+      addTransaction,
+      updateTransaction,
+      sendTransactionAsync,
+      writeContractAsync,
+      txHash,
+      clearPendingTimeout,
+      startPendingTimeout,
+    ]
   );
 
   const reset = useCallback(() => {
+    clearPendingTimeout();
     setQuote(null);
     setStatus("idle");
     setError(null);
     setTxHash(null);
     setPendingTxHash(null);
-  }, []);
+  }, [clearPendingTimeout]);
 
   return {
     fromToken,

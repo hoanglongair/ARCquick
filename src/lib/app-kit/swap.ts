@@ -2,14 +2,17 @@
 
 import type { Token, SwapQuote } from "@/types";
 
-interface SwapParams {
-  fromToken: Token;
-  toToken: Token;
-  fromAmount: string;
-  slippageTolerance: number;
+const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+export function isNativeToken(token: Token): boolean {
+  return (
+    token.address === NATIVE_TOKEN_ADDRESS ||
+    token.address === "0x" ||
+    token.address.toLowerCase() === NATIVE_TOKEN_ADDRESS
+  );
 }
 
-interface SwapResult {
+export interface SwapResult {
   toAmount: string;
   exchangeRate: number;
   priceImpact: number;
@@ -22,15 +25,14 @@ interface SwapResult {
   };
 }
 
-function isNativeToken(token: Token): boolean {
-  return (
-    token.address === "0x0000000000000000000000000000000000000000" ||
-    token.address === "0x" ||
-    token.address.toLowerCase() === "0x0000000000000000000000000000000000000000"
-  );
+interface QuoteParams {
+  fromToken: Token;
+  toToken: Token;
+  fromAmount: string;
+  slippageTolerance: number;
 }
 
-export async function getSwapQuote(params: SwapParams): Promise<SwapResult> {
+export async function getSwapQuote(params: QuoteParams): Promise<SwapResult> {
   const { fromToken, toToken, fromAmount, slippageTolerance } = params;
 
   if (!fromAmount || parseFloat(fromAmount) === 0) {
@@ -55,71 +57,6 @@ export async function getSwapQuote(params: SwapParams): Promise<SwapResult> {
     estimatedGas,
     minimumReceived,
   };
-}
-
-export async function executeSwap(params: {
-  quote: SwapResult;
-  fromToken: Token;
-  toToken: Token;
-  fromAmount: string;
-  walletAddress: string;
-}): Promise<{ hash: string }> {
-  const { quote, fromToken, toToken, fromAmount, walletAddress } = params;
-
-  if (!walletAddress) {
-    throw new Error("Wallet not connected");
-  }
-
-  if (isNativeToken(fromToken)) {
-    const value = (
-      parseFloat(fromAmount) *
-      10 ** fromToken.decimals
-    ).toString();
-    return {
-      hash: `0x${Buffer.from(JSON.stringify({ fromToken, toToken, fromAmount, quote, timestamp: Date.now() })).toString("hex").slice(0, 64)}`,
-    };
-  }
-
-  const erc20Value = (
-    parseFloat(fromAmount) *
-    10 ** fromToken.decimals
-  ).toString();
-
-  return {
-    hash: `0x${Buffer.from(JSON.stringify({ fromToken: fromToken.address, toToken: toToken.address, amount: erc20Value, quote, timestamp: Date.now() })).toString("hex").slice(0, 64)}`,
-  };
-}
-
-export function buildSwapTransaction(params: {
-  quote: SwapResult;
-  fromToken: Token;
-  toToken: Token;
-  fromAmount: string;
-  walletAddress: string;
-}) {
-  const { quote, fromToken, toToken, fromAmount, walletAddress } = params;
-
-  if (isNativeToken(fromToken)) {
-    return {
-      to: toToken.address,
-      data: "0x",
-      value: (parseFloat(fromAmount) * 10 ** fromToken.decimals).toString(),
-    };
-  }
-
-  return {
-    to: fromToken.address,
-    data: buildApproveData(toToken.address, fromAmount),
-    value: "0",
-  };
-}
-
-function buildApproveData(spender: string, amount: string): string {
-  const ABI = ["function approve(address spender, uint256 amount)"];
-  const selector = "0x095ea7b3";
-  const amountHex = BigInt(amount).toString(16).padStart(64, "0");
-  const spenderHex = spender.slice(2).padStart(64, "0");
-  return `${selector}${spenderHex}${amountHex}`;
 }
 
 export function isValidSwapAmount(

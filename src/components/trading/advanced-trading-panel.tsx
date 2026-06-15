@@ -7,6 +7,7 @@ import { useAdvancedTradingStore } from "@/stores/advanced-trading-store";
 import { usePriceFeed } from "@/hooks/use-price-feed";
 import { getRouterConfig } from "@/lib/app-kit/router";
 import type { Token } from "@/types";
+import { TOKENS } from "@/lib/tokens";
 
 interface AdvancedTradingPanelProps {
   tokenA: string;
@@ -341,8 +342,8 @@ function RoutesPanel({ tokenA, tokenB }: { tokenA: string; tokenB: string }) {
     setError("");
     try {
       const { getBestRoute } = await import("@/lib/app-kit/router");
-      const fromT: Token = { symbol: tokenB, address: "0x036aBf8B88F8C4bDe3d5C2c7a6D7C8a8C9B0D1E", decimals: 6, name: tokenB, icon: "$", chainId: 421614, price: 1 };
-      const toT: Token = { symbol: tokenA, address: "0x0000000000000000000000000000000000000000", decimals: 18, name: tokenA, icon: "Ξ", chainId: 421614, price: 2847.5 };
+      const fromT: Token = { ...TOKENS.USDC, symbol: tokenB, name: tokenB };
+      const toT: Token = { ...TOKENS.ETH, symbol: tokenA, name: tokenA };
       const result = await getBestRoute({ fromToken: fromT, toToken: toT, fromAmount: amount, slippageTolerance: 0.5 });
       setRoutes(result);
       setShowRoutes(true);

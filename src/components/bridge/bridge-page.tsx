@@ -20,16 +20,9 @@ import { useTokenBalance } from "@/hooks/use-token-balance";
 import { useWalletModal } from "@/components/wallet";
 import type { Token } from "@/types";
 import { formatUSD } from "@/lib/utils";
+import { TOKENS } from "@/lib/tokens";
 
-const USDC_TOKEN: Token = {
-  symbol: "USDC",
-  address: "0x036aBf8B88F8C4bDe3d5C2c7a6D7C8a8C9B0D1E",
-  decimals: 6,
-  name: "USD Coin",
-  icon: "$",
-  chainId: 421614,
-  price: 1,
-};
+const USDC_TOKEN: Token = TOKENS.USDC;
 
 export default function BridgePage() {
   const { isConnected, address } = useAccount();

@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [2026-06-16] - v0.2.1
+
+### Fixed
+
+- **Swap: invalid `to` address on native → ERC20 swap**
+  - `useSwap` and App Kit `SUPPORTED_TOKENS` were using a placeholder USDC address `0x036aBf8B...` (only 39 hex chars) which viem rejects with "Address must be a hex value of 20 bytes (40 hex characters)".
+  - Introduced `src/lib/tokens.ts` as a single source of truth for in-app tokens (ETH, USDC). USDC address now sourced from `ARC_TESTNET_CONFIG.contracts.usdc` (`0x3600…0000`).
+  - Updated all consumers: `use-swap.ts`, `use-twap-executor.ts`, `use-limit-order-checker.ts`, `token-selector.tsx`, `send-page.tsx`, `bridge-page.tsx`, `advanced-trading-panel.tsx`, `app-kit/config.ts`.
+  - `useSwap.executeSwap` now branches on `isNativeTokenAddress`:
+    - Native: `sendTransaction({ to: walletAddress, value })` (self-transfer, no fake router call).
+    - ERC20: `writeContract({ functionName: 'transfer', args: [walletAddress, amount] })` on the real token contract.
+- **Swap: RPC "too many errors" + `chain: undefined` after submission**
+  - `sendTransactionAsync` and `writeContractAsync` were called with an explicit `chainId` that wagmi couldn't reconcile, causing viem to log `chain: undefined` and then spam the only configured RPC.
+  - Removed explicit `chainId` from those calls; wagmi now uses the wallet's current chain (Arc Testnet 5042002).
+  - `useTransactionWatcher` now passes `chainId` from `useAccount`, polls every 4s (was 2s), sets `confirmations: 1`, disables auto-retry, and **distinguishes RPC errors from on-chain failures** — RPC hiccups surface a "Network is busy" warning and do NOT mark the tx as failed (it is still valid on-chain).
+  - `wagmi/config.ts` Arc Testnet transport: `batchSize` 100 → 10, `wait` 16ms → 100ms, `retryCount` 3 → 1, `timeout` 10s; the `fallback` transport covers primary → drpc → quicknode → blockdaemon.
+
+### Changed
+
+- `src/hooks/use-swap.ts` now uses `useSendTransaction` / `useWriteContract` directly (viem `sendTransaction` helper removed) for cleaner error messages and chain handling.
+- `use-twap-executor.ts` and `use-limit-order-checker.ts` no longer import a non-existent `executeSwap`; they delegate to the same `useSwap()` hook used by the UI.
+- `lib/wagmi/config.ts` connector array typed as `CreateConnectorFn[]` to fix pre-existing wagmi typing error between `injected` / `walletConnect` / `coinbaseWallet`.
+
+---
+
 ## [2026-06-07] - v0.2.0
 
 ### Added

@@ -1,5 +1,7 @@
 export {
   config as wagmiConfig,
+} from "./config";
+export {
   arcSepolia,
   arcTestnet,
   ARC_TESTNET_CONFIG,

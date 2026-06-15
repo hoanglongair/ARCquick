@@ -12,37 +12,9 @@ import { useTokenBalance, isNativeToken } from "@/hooks/use-token-balance";
 import { useWalletModal } from "@/components/wallet";
 import type { Token } from "@/types";
 import { formatUSD } from "@/lib/utils";
+import { TOKENS, TOKEN_LIST } from "@/lib/tokens";
 
-const DEFAULT_TOKEN: Token = {
-  symbol: "ETH",
-  address: "0x0000000000000000000000000000000000000000",
-  decimals: 18,
-  name: "Ethereum",
-  icon: "\u039E",
-  chainId: 421614,
-  price: 2847.5,
-};
-
-const SENDABLE_TOKENS: Token[] = [
-  {
-    symbol: "ETH",
-    address: "0x0000000000000000000000000000000000000000",
-    decimals: 18,
-    name: "Ethereum",
-    icon: "\u039E",
-    chainId: 421614,
-    price: 2847.5,
-  },
-  {
-    symbol: "USDC",
-    address: "0x036aBf8B88F8C4bDe3d5C2c7a6D7C8a8C9B0D1E",
-    decimals: 6,
-    name: "USD Coin",
-    icon: "$",
-    chainId: 421614,
-    price: 1,
-  },
-];
+const DEFAULT_TOKEN: Token = TOKENS.ETH;
 
 export default function SendPage() {
   const { isConnected, address } = useAccount();
@@ -127,7 +99,6 @@ export default function SendPage() {
 
   const getTokenGradient = (sym: string) => {
     if (sym === "USDC") return "linear-gradient(135deg, #2775ca, #5badff)";
-    if (sym === "EURC") return "linear-gradient(135deg, #1e3a8a, #3b82f6)";
     return "linear-gradient(135deg, #627eea, #a9b3ff)";
   };
 

@@ -169,7 +169,8 @@ Mục tiêu:
 
 ## Known Issues
 
-- Chưa có
+- Bug: Swap ETH→ERC20 failed with "Address invalid" because placeholder `0x036aBf8B...` (39 hex chars) was used as USDC contract address in `useSwap`/App Kit config/token selectors. **Fixed in v0.2.1** by introducing `src/lib/tokens.ts` as single source of truth and replacing with real Arc Testnet USDC (`0x3600...`).
+- Bug: After submitting a tx, `useWaitForTransactionReceipt` reported `chain: undefined (id: 5042002)` and Arc Testnet RPC returned "too many errors". **Fixed in v0.2.1** by: (a) not passing `chainId` in sendTransaction/writeContract calls (let wagmi use wallet's current chain), (b) increasing tx watcher polling interval to 4s and disabling auto-retry, (c) reducing wagmi batch size from 100→10 and adding transport-level fallback.
 
 ## Technical Stack
 

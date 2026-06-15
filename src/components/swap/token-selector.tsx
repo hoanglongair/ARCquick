@@ -6,6 +6,7 @@ import { Input } from "@/components/ui";
 import { useState, useMemo } from "react";
 import { useAccount } from "wagmi";
 import { useTokenBalance } from "@/hooks/use-token-balance";
+import { TOKEN_LIST } from "@/lib/tokens";
 
 interface TokenSelectorProps {
   isOpen: boolean;
@@ -14,35 +15,7 @@ interface TokenSelectorProps {
   excludeToken?: Token;
 }
 
-const DEFAULT_TOKENS: Token[] = [
-  {
-    symbol: "USDC",
-    address: "0x036aBf8B88F8C4bDe3d5C2c7a6D7C8a8C9B0D1E",
-    decimals: 6,
-    name: "USD Coin",
-    icon: "$",
-    chainId: 421614,
-    price: 1,
-  },
-  {
-    symbol: "EURC",
-    address: "0x1234567890abcdef1234567890abcdef12345678",
-    decimals: 6,
-    name: "Euro Coin",
-    icon: "\u20AC",
-    chainId: 421614,
-    price: 1.08,
-  },
-  {
-    symbol: "ETH",
-    address: "0x0000000000000000000000000000000000000000",
-    decimals: 18,
-    name: "Ethereum",
-    icon: "\u039E",
-    chainId: 421614,
-    price: 2847.5,
-  },
-];
+const DEFAULT_TOKENS: Token[] = TOKEN_LIST;
 
 export function TokenSelector({
   isOpen,
@@ -125,7 +98,6 @@ function TokenRow({
 
   const getTokenGradient = () => {
     if (token.symbol === "USDC") return "linear-gradient(135deg, #2775ca, #5badff)";
-    if (token.symbol === "EURC") return "linear-gradient(135deg, #1e3a8a, #3b82f6)";
     if (token.symbol === "ETH") return "linear-gradient(135deg, #627eea, #a9b3ff)";
     return "linear-gradient(135deg, #6b7280, #9ca3af)";
   };

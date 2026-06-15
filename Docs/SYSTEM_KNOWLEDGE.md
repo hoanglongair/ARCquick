@@ -49,6 +49,14 @@ User enters amount to swap
   → Show pending state
   → On confirmation: Update balances, show success
   → On failure: Show error, allow retry
+
+  Note: ARCquick does not yet integrate a live DEX router. As a placeholder,
+  the "Swap" action performs a self-transfer so the wallet signing flow can be
+  exercised end-to-end:
+    • Native → any token: native is sent to the user's own address
+    • ERC20 → any token: a transfer is sent from the user to themselves
+  Quotes are computed locally from the cached price feed. Production will
+  replace both branches with a call to the on-chain router.
 ```
 
 **3. Cross-Chain Bridge Flow**
@@ -159,9 +167,14 @@ User opens Settings modal → Alerts tab
 ```
 User executes swap/bridge
   → Tx hash captured, pending status shown
-  → useTransactionWatcher polls chain every 2s for confirmation
+  → useTransactionWatcher polls chain every 4s for confirmation
   → On confirm: "Transaction confirmed on-chain!" toast
   → On fail: "Transaction failed" toast + tx marked failed
+  → If RPC endpoint is busy (rate-limited / 5xx): a "Network is busy" warning
+    is shown but the tx is NOT marked failed. The on-chain tx is still valid;
+    user is directed to the explorer for the canonical status.
+  → A pending tx is auto-failed only after a 5-minute timeout with no
+    on-chain progress.
 ```
 
 **14. Advanced Trading Flow**
@@ -205,6 +218,9 @@ User opens Settings → Security tab
 - Token balances fetched from Arc RPC via viem
 - Prices fetched from CoinGecko API (`usePriceFeed` hook, 30s polling)
 - Price alerts stored in Zustand (localStorage persist, up to 50 alerts)
+- All token addresses (USDC contract, native placeholder) come from a single
+  source of truth (`src/lib/tokens.ts`) so the app never ships an invalid or
+  truncated address.
 
 **2. Transaction Rules**
 - All transactions require wallet connection
