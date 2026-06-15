@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useNavScrolled } from "@/components/effects";
 import { useAuth } from "@/lib/supabase";
 import { User, LogOut, Settings, UserCircle } from "lucide-react";
+import { useEffect } from "react";
 
 export function Navbar() {
   const { address, isConnected } = useAccount();
@@ -18,8 +19,13 @@ export function Navbar() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showWalletDropdown, setShowWalletDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const isScrolled = useNavScrolled();
   const { user, signOut } = useAuth();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -71,7 +77,7 @@ export function Navbar() {
           <div className="flex items-center gap-3">
             <NetworkSwitcher />
 
-            {user ? (
+            {isMounted && user ? (
               <div className="relative">
                 <button
                   onClick={() => setShowUserDropdown(!showUserDropdown)}
@@ -119,7 +125,7 @@ export function Navbar() {
                   </div>
                 )}
               </div>
-            ) : (
+            ) : !isMounted ? null : (
               <Button
                 onClick={() => setShowAuthModal(true)}
                 variant="outline"
