@@ -13,7 +13,7 @@ Mục tiêu:
 
 ## Current Phase
 
-**Phase 3: Advanced** - 3.1✅ 3.2✅ 3.3✅ 3.4✅ COMPLETED!
+**Phase 3: Advanced** - 3.1✅ 3.2✅ 3.3✅ 3.4✅ **Phase 3.5 Live Prices ✅** COMPLETED!
 
 ## Completed Features
 
@@ -29,6 +29,15 @@ Mục tiêu:
 - [x] CHANGELOG.md - Lịch sử thay đổi
 - [x] PROJECT_RULES.md - Project guidelines
 - [x] BUILD_PLAN.md - Kế hoạch chi tiết xây dựng
+
+### Phase 3.5: Live Prices ✅
+- [x] Server route `/api/prices` proxying CoinGecko with 60s in-memory cache
+- [x] `usePriceFeed` hook (existing) remains single source of truth for live USD + 24h change
+- [x] `useTokenListWithPrices` hook merges on-chain `TOKEN_LIST` with live prices
+- [x] `src/lib/tokens.ts` refactored to metadata-only; no mock prices
+- [x] `useSwap.getQuote` and `app-kit/swap.ts` use live prices for exchange rate
+- [x] `TokenBox` USD value, `TokenSelector` value column use live prices
+- [x] Home page ticker + supported-assets grid use live prices via `usePriceFeed`
 
 ### Phase 1.1: Project Initialization ✅
 - [x] Tạo Next.js 14 project với TypeScript + Tailwind

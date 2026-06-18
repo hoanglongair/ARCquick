@@ -210,17 +210,37 @@ User opens Settings → Security tab
   Gas alert: toast when gas price exceeds threshold (30min cooldown)
 ```
 
+**16. Live Price Feed Flow**
+```
+User opens any page that shows a token value
+  → The page resolves the USD price and 24h change for the supported tokens
+    through the same shared live feed
+  → The feed refreshes on a fixed cadence and is rate-limit aware
+  → The UI derives the USD value of any entered amount, the exchange rate
+    for swap and bridge quotes, the marketing ticker, and the supported-
+    assets grid directly from this feed
+  → The marketing ticker and the supported-assets grid only render symbols
+    explicitly approved for marketing, even when the feed returns more
+  → If the live feed is unreachable, swap and send flows show no USD value
+    and the marketing page falls back to a static last-resort price so the
+    ticker still renders
+```
+
 ### Domain Rules
 
 **1. Token Rules**
 - Default token: ETH/USDC (primary on Arc)
 - Supported tokens: ETH, USDC, EURC, WETH, USDT, DAI, ARB, MATIC
-- Token balances fetched from Arc RPC via viem
-- Prices fetched from CoinGecko API (`usePriceFeed` hook, 30s polling)
-- Price alerts stored in Zustand (localStorage persist, up to 50 alerts)
+- Token balances come from chain RPC reads
+- USD prices and 24h change are never hardcoded. They come from a shared
+  live price feed that every page consumes: swap and bridge quotes, send
+  value column, marketing ticker, supported-assets grid, dashboard. If the
+  feed is unreachable, swap and send show no USD value and the marketing
+  page falls back to a static last-resort price so the ticker still renders.
+- Price alerts stored on device (up to 50)
 - All token addresses (USDC contract, native placeholder) come from a single
-  source of truth (`src/lib/tokens.ts`) so the app never ships an invalid or
-  truncated address.
+  source of truth on the application side, so the app never ships an invalid
+  or truncated address.
 
 **2. Transaction Rules**
 - All transactions require wallet connection

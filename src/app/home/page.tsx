@@ -6,7 +6,6 @@ import { Button } from "@/components/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, Zap, Shield, Route, Globe, Droplets, Key } from "lucide-react";
 import { usePriceFeed, type TokenPrice } from "@/hooks/use-price-feed";
-import { useTokenListWithPrices } from "@/hooks/use-token-list";
 
 // Symbols we surface on the marketing page. We only show coins we can
 // actually quote live (no mock numbers on a public landing page).
@@ -24,8 +23,8 @@ const MARKET_META: Record<string, { gradient: string; icon: string; displayName:
   ARB:  { gradient: "linear-gradient(135deg, #28a0f0, #96c8ff)", icon: "A", displayName: "Arbitrum" },
 };
 
-// Last-resort values when the API is unreachable. Used only for the marketing
-// page so the UI never shows a blank row; swap flow has its own fallback.
+// Last-resort values when the live feed is unreachable. Used only for the
+// marketing page so the UI never shows a blank row.
 const FALLBACK_TICKER: Record<string, { usd: number; change24h: number }> = {
   ETH:  { usd: 1730, change24h: 0 },
   WETH: { usd: 1730, change24h: 0 },
@@ -721,30 +720,6 @@ export default function HomePage() {
       </footer>
     </div>
   );
-}
-
-/**
- * Per-symbol gradient for the supported-assets grid. Unknown symbols fall
- * back to a neutral gradient so the layout still renders.
- */
-function homeGradient(symbol: string): string {
-  switch (symbol) {
-    case "ETH":
-    case "WETH":
-      return "linear-gradient(135deg, #627eea, #a9b3ff)";
-    case "USDC":
-      return "linear-gradient(135deg, #2775ca, #5badff)";
-    case "EURC":
-      return "linear-gradient(135deg, #1e3a8a, #3b82f6)";
-    case "USDT":
-      return "linear-gradient(135deg, #26a17b, #50c897)";
-    case "DAI":
-      return "linear-gradient(135deg, #f5ac37, #fcd57a)";
-    case "ARB":
-      return "linear-gradient(135deg, #28a0f0, #96c8ff)";
-    default:
-      return "linear-gradient(135deg, #6b7280, #9ca3af)";
-  }
 }
 
 function formatUsdShort(n: number): string {
