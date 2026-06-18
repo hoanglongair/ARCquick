@@ -6,6 +6,7 @@ import { Input } from "@/components/ui";
 import { useState, useMemo } from "react";
 import { useAccount } from "wagmi";
 import { useTokenBalance } from "@/hooks/use-token-balance";
+import { useTokenListWithPrices } from "@/hooks/use-token-list";
 import { TOKEN_LIST } from "@/lib/tokens";
 
 interface TokenSelectorProps {
@@ -95,6 +96,8 @@ function TokenRow({
     address,
     watch: true,
   });
+  const { bySymbol } = useTokenListWithPrices();
+  const livePrice = bySymbol[token.symbol]?.price ?? token.price ?? 0;
 
   const getTokenGradient = () => {
     if (token.symbol === "USDC") return "linear-gradient(135deg, #2775ca, #5badff)";
@@ -129,7 +132,7 @@ function TokenRow({
           <div className="font-mono font-medium">{formattedBalance}</div>
         )}
         <div className="text-xs text-muted-foreground">
-          ${(token.price ?? 0).toFixed(2)}
+          ${livePrice.toFixed(2)}
         </div>
       </div>
     </button>

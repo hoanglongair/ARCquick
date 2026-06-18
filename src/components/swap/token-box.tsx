@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { Button } from "@/components/ui";
 import { formatUSD } from "@/lib/utils";
 import { isNativeToken } from "@/hooks/use-token-balance";
+import { useTokenListWithPrices } from "@/hooks/use-token-list";
 import type { Token } from "@/types";
 
 interface TokenBoxProps {
@@ -28,10 +29,12 @@ export function TokenBox({
   onMaxClick,
 }: TokenBoxProps) {
   const isNative = isNativeToken(token);
+  const { bySymbol } = useTokenListWithPrices();
+  const livePrice = bySymbol[token.symbol]?.price ?? token.price ?? 0;
 
   const usdValue =
     amount && parseFloat(amount) > 0
-      ? parseFloat(amount) * (token.price ?? 0)
+      ? parseFloat(amount) * livePrice
       : 0;
 
   const handleMaxClick = useCallback(() => {

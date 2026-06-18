@@ -9,55 +9,23 @@ export interface TokenPrice {
   lastUpdated: number;
 }
 
-interface CoinGeckoSimplePrice {
-  [id: string]: {
-    usd: number;
-    usd_24h_change?: number;
-  };
+interface PricesApiResponse {
+  ok: boolean;
+  prices?: Record<string, TokenPrice>;
+  fetchedAt?: number;
+  error?: string;
 }
 
-const COINGECKO_IDS: Record<string, string> = {
-  ETH: "ethereum",
-  USDC: "usd-coin",
-  EURC: "euro-coin",
-  WETH: "weth",
-  USDT: "tether",
-  DAI: "dai",
-  ARB: "arbitrum",
-  MATIC: "matic-network",
-};
-
 async function fetchPrices(): Promise<Record<string, TokenPrice>> {
-  const ids = Object.values(COINGECKO_IDS).join(",");
-  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`;
-
-  const res = await fetch(url, {
-    next: { revalidate: 0 },
-    signal: AbortSignal.timeout(8000),
-  });
-
+  const res = await fetch("/api/prices", { cache: "no-store" });
   if (!res.ok) {
-    throw new Error(`CoinGecko API error: ${res.status}`);
+    throw new Error(`Prices API error: ${res.status}`);
   }
-
-  const data: CoinGeckoSimplePrice = await res.json();
-  const now = Date.now();
-
-  const prices: Record<string, TokenPrice> = {};
-
-  for (const [symbol, id] of Object.entries(COINGECKO_IDS)) {
-    const coinData = data[id];
-    if (coinData) {
-      prices[symbol] = {
-        symbol,
-        usd: coinData.usd,
-        change24h: coinData.usd_24h_change ?? 0,
-        lastUpdated: now,
-      };
-    }
+  const json = (await res.json()) as PricesApiResponse;
+  if (!json.ok || !json.prices) {
+    throw new Error(json.error ?? "Prices API returned no data");
   }
-
-  return prices;
+  return json.prices;
 }
 
 export function usePriceFeed() {
@@ -73,9 +41,9 @@ export function usePriceFeed() {
 
 export function useTokenPrice(symbol: string) {
   const { data: prices } = usePriceFeed();
-  return prices?.[symbol] ?? null;
+  return prices?.[symbol.toUpperCase()] ?? null;
 }
 
 export function getCoinGeckoId(symbol: string): string {
-  return COINGECKO_IDS[symbol.toUpperCase()] ?? symbol.toLowerCase();
+  return symbol.toUpperCase();
 }

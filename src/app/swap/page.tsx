@@ -58,6 +58,32 @@ export default function SwapPage() {
     return () => clearTimeout(timer);
   }, [fromAmount, fromToken, toToken, getQuote]);
 
+  // #region agent log
+  useEffect(() => {
+    if (!quote) return;
+    fetch('http://127.0.0.1:7881/ingest/40f9def0-dd00-4c01-a49d-85ca6d337bf7', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '485dad' },
+      body: JSON.stringify({
+        sessionId: '485dad',
+        hypothesisId: 'PRICE1',
+        location: 'swap/page.tsx:quote',
+        message: 'swap quote computed',
+        data: {
+          from: fromToken.symbol,
+          to: toToken.symbol,
+          fromAmount,
+          toAmount: quote.toAmount,
+          exchangeRate: quote.exchangeRate,
+          estimatedGas: quote.estimatedGas,
+          priceImpact: quote.priceImpact,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }, [quote, fromToken.symbol, toToken.symbol, fromAmount]);
+  // #endregion
+
   const handleFlipTokens = useCallback(() => {
     swapTokens();
     setFromAmount("");

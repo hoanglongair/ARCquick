@@ -6,6 +6,7 @@ import { erc20Abi, parseUnits } from "viem";
 import type { Token } from "@/types";
 import { isValidSwapAmount } from "@/lib/app-kit";
 import { TOKENS, isNativeTokenAddress } from "@/lib/tokens";
+import { useTokenListWithPrices } from "@/hooks/use-token-list";
 import { useAppStore } from "@/stores";
 import { useTransactionWatcher } from "@/hooks/use-transaction-watcher";
 
@@ -30,6 +31,9 @@ export function useSwap() {
 
   const { sendTransactionAsync } = useSendTransaction();
   const { writeContractAsync } = useWriteContract();
+
+  // Live prices from /api/prices → applied to quote calculation.
+  const { bySymbol } = useTokenListWithPrices();
 
   const [fromToken, setFromToken] = useState<Token>(TOKENS.ETH);
   const [toToken, setToToken] = useState<Token>(TOKENS.USDC);
@@ -108,8 +112,8 @@ export function useSwap() {
       setError(null);
 
       try {
-        const fromPrice = fromToken.price ?? 1;
-        const toPrice = toToken.price ?? 1;
+        const fromPrice = bySymbol[fromToken.symbol]?.price ?? 1;
+        const toPrice = bySymbol[toToken.symbol]?.price ?? 1;
         const rate = fromPrice / toPrice;
         const toAmountFloat = parseFloat(amount) * rate;
         const toAmount = toAmountFloat.toFixed(toToken.decimals > 6 ? 4 : 2);
@@ -135,7 +139,7 @@ export function useSwap() {
         setQuote(null);
       }
     },
-    [fromToken, toToken, slippageTolerance]
+    [fromToken, toToken, slippageTolerance, bySymbol]
   );
 
   const executeSwapTx = useCallback(
