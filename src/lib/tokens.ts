@@ -5,7 +5,12 @@ export const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 /**
  * Single source of truth for all in-app tokens.
- * Every component/hook should import from here instead of hardcoding addresses.
+ *
+ * IMPORTANT: `price` is intentionally NOT set here. Token USD prices come
+ * from the live CoinGecko feed (see `use-token-list.ts` / `/api/prices`).
+ * Keeping them out of this constant prevents UI from silently rendering
+ * stale mock prices. Use `useTokenListWithPrices()` to get tokens with
+ * live prices applied.
  *
  * Addresses used:
  * - ETH: native placeholder (0x0)
@@ -19,7 +24,6 @@ export const TOKENS = {
     name: "Ethereum",
     icon: "\u039E",
     chainId: ARC_TESTNET_CONFIG.chainId,
-    price: 2847.5,
   },
   USDC: {
     symbol: "USDC",
@@ -28,7 +32,6 @@ export const TOKENS = {
     name: "USD Coin",
     icon: "$",
     chainId: ARC_TESTNET_CONFIG.chainId,
-    price: 1,
   },
 } as const satisfies Record<string, Token>;
 

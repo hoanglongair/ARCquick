@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [2026-06-18] - v0.3.1
+
+### Fixed
+
+- **Marketing page ticker only scrolled halfway**
+  - The home page ticker was sourcing rows from the on-chain token list, which only contains the two tokens the DEX actually quotes. The marquee therefore repeated after two entries and looked like it stopped mid-scroll.
+  - The ticker and the supported-assets grid now source every row from the live price feed and only filter by a marketing allowlist, so the full seven-symbol set is rendered.
+
+---
+
+## [2026-06-18] - v0.3.0
+
+### Added
+
+- **Live token prices across the entire app**
+  - A server route exposes USD prices and 24h change for the full supported set (ETH, WETH, USDC, EURC, USDT, DAI, ARB, MATIC), backed by CoinGecko with a 60s in-memory cache to stay under the public rate limit.
+  - The same live feed is consumed wherever a USD value, exchange rate, or marketing ticker/grid entry is shown: swap quote, send and bridge value columns, the home page ticker, and the supported-assets grid.
+  - A shared hook merges the on-chain token list with the live feed so the UI gets symbol + decimals + contract address together with USD and 24h change.
+
+### Changed
+
+- The on-chain token table is now metadata-only (symbol, decimals, contract address). USD value and 24h change are no longer stored on token objects; they always come from the live feed.
+- Swap quote and the marketing ticker/grid no longer use a hardcoded mock price. A marketing-page-only last-resort fallback exists so the ticker still renders if the upstream feed is unreachable; the swap and send flows have their own fallback.
+
+---
+
 ## [2026-06-16] - v0.2.1
 
 ### Fixed

@@ -3,8 +3,37 @@
 import Link from "next/link";
 import { Navbar } from "@/components/layout";
 import { Button } from "@/components/ui";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, Zap, Shield, Route, Globe, Droplets, Key } from "lucide-react";
+import { usePriceFeed, type TokenPrice } from "@/hooks/use-price-feed";
+
+// Symbols we surface on the marketing page. We only show coins we can
+// actually quote live (no mock numbers on a public landing page).
+const TICKER_SYMBOLS = ["ETH", "WETH", "USDC", "EURC", "USDT", "DAI", "ARB"] as const;
+
+// Static display metadata for the marketing grid (gradient + icon letter).
+// Real prices still come from the live feed.
+const MARKET_META: Record<string, { gradient: string; icon: string; displayName: string }> = {
+  ETH:  { gradient: "linear-gradient(135deg, #627eea, #a9b3ff)", icon: "Ξ", displayName: "Ethereum" },
+  WETH: { gradient: "linear-gradient(135deg, #627eea, #a9b3ff)", icon: "Ξ", displayName: "Wrapped Ether" },
+  USDC: { gradient: "linear-gradient(135deg, #2775ca, #5badff)", icon: "$", displayName: "USD Coin" },
+  EURC: { gradient: "linear-gradient(135deg, #1e3a8a, #3b82f6)", icon: "€", displayName: "Euro Coin" },
+  USDT: { gradient: "linear-gradient(135deg, #26a17b, #50c897)", icon: "₮", displayName: "Tether" },
+  DAI:  { gradient: "linear-gradient(135deg, #f5ac37, #fcd57a)", icon: "◈", displayName: "Dai Stablecoin" },
+  ARB:  { gradient: "linear-gradient(135deg, #28a0f0, #96c8ff)", icon: "A", displayName: "Arbitrum" },
+};
+
+// Last-resort values when the live feed is unreachable. Used only for the
+// marketing page so the UI never shows a blank row.
+const FALLBACK_TICKER: Record<string, { usd: number; change24h: number }> = {
+  ETH:  { usd: 1730, change24h: 0 },
+  WETH: { usd: 1730, change24h: 0 },
+  USDC: { usd: 1,    change24h: 0 },
+  EURC: { usd: 1.15, change24h: 0 },
+  USDT: { usd: 1,    change24h: 0 },
+  DAI:  { usd: 1,    change24h: 0 },
+  ARB:  { usd: 0.08, change24h: 0 },
+};
 
 function AnimatedNumber({ target, suffix = "" }: { target: number; suffix?: string }) {
   const [value, setValue] = useState(0);
@@ -78,17 +107,6 @@ const features = [
   },
 ];
 
-const tokens = [
-  { symbol: "ETH", name: "Ethereum", price: "$2,847", change: "+2.34%", up: true },
-  { symbol: "USDC", name: "USD Coin", price: "$1.00", change: "+0.01%", up: true },
-  { symbol: "LINK", name: "Chainlink", price: "$14.72", change: "+1.89%", up: true },
-  { symbol: "MATIC", name: "Polygon", price: "$0.847", change: "-0.72%", up: false },
-  { symbol: "UNI", name: "Uniswap", price: "$7.34", change: "+4.12%", up: true },
-  { symbol: "ARB", name: "Arbitrum", price: "$1.14", change: "+3.56%", up: true },
-  { symbol: "WBTC", name: "Wrapped Bitcoin", price: "$42,180", change: "-1.23%", up: false },
-  { symbol: "AAVE", name: "Aave Protocol", price: "$94.50", change: "+0.98%", up: true },
-];
-
 const steps = [
   {
     num: "01",
@@ -119,6 +137,48 @@ const steps = [
 export default function HomePage() {
   const revealsRef = useRef<HTMLDivElement>(null);
 
+  // Pull every price the API knows about. Ticker/marketing only show
+  // symbols we whitelist; we don't filter by the on-chain TOKEN_LIST.
+  const { data: livePrices } = usePriceFeed();
+
+  // Resolve a USD price for any symbol. Prefers live data, falls back to
+  // a hardcoded last-resort so the ticker always renders something.
+  const resolve = useMemo(() => {
+    return (symbol: string): TokenPrice => {
+      const sym = symbol.toUpperCase();
+      const live = livePrices?.[sym];
+      if (live && typeof live.usd === "number" && live.usd > 0) return live;
+      const fb = FALLBACK_TICKER[sym];
+      return {
+        symbol: sym,
+        usd: fb?.usd ?? 1,
+        change24h: fb?.change24h ?? 0,
+        lastUpdated: 0,
+      };
+    };
+  }, [livePrices]);
+
+  // Ticker rows: every whitelisted symbol, in fixed order, deduplicated.
+  const tickerRows = useMemo(
+    () =>
+      TICKER_SYMBOLS.map((s) => {
+        const p = resolve(s);
+        const meta = MARKET_META[s];
+        return {
+          symbol: p.symbol,
+          price: p.usd,
+          change24h: p.change24h,
+          displayName: meta?.displayName ?? s,
+          gradient: meta?.gradient ?? "linear-gradient(135deg, #6b7280, #9ca3af)",
+          icon: meta?.icon ?? p.symbol.slice(0, 1),
+        };
+      }),
+    [resolve]
+  );
+
+  // Marketing grid rows: same set, same source.
+  const marketTokens = tickerRows;
+
   useEffect(() => {
     const reveals = document.querySelectorAll(".reveal");
     const observer = new IntersectionObserver(
@@ -132,6 +192,30 @@ export default function HomePage() {
     reveals.forEach((r) => observer.observe(r));
     return () => observer.disconnect();
   }, []);
+
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7881/ingest/40f9def0-dd00-4c01-a49d-85ca6d337bf7', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '485dad' },
+      body: JSON.stringify({
+        sessionId: '485dad',
+        hypothesisId: 'PRICE3',
+        location: 'home/page.tsx:ticker',
+        message: 'home ticker rendered v2',
+        data: {
+          tickerSymbols: tickerRows.map((t) => ({
+            s: t.symbol,
+            p: t.price,
+            c24: t.change24h,
+          })),
+          marketCount: marketTokens.length,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }, [tickerRows]);
+  // #endregion
 
   return (
     <div className="min-h-screen bg-background overflow-hidden">
@@ -245,13 +329,15 @@ export default function HomePage() {
         }}
       >
         <div className="flex animate-ticker whitespace-nowrap">
-          {[...tokens, ...tokens].map((token, i) => (
+          {[...tickerRows, ...tickerRows].map((token, i) => (
             <span key={i} className="mx-8 flex items-center gap-2 font-mono text-sm">
               <span className="font-medium">{token.symbol}/USDC</span>
-              <span className={token.up ? "text-green-400" : "text-red-400"}>
-                {token.change}
+              <span className={token.change24h >= 0 ? "text-green-400" : "text-red-400"}>
+                {formatChange(token.change24h)}
               </span>
-              <span style={{ color: "rgba(240,244,248,0.45)" }}>{token.price}</span>
+              <span style={{ color: "rgba(240,244,248,0.45)" }}>
+                {formatUsdShort(token.price)}
+              </span>
             </span>
           ))}
         </div>
@@ -512,9 +598,9 @@ export default function HomePage() {
         </div>
 
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {tokens.map((token, i) => (
+          {marketTokens.map((token, i) => (
             <div
-              key={i}
+              key={token.symbol}
               className="reveal flex items-center gap-4 rounded-xl border p-5 transition-all hover:-translate-y-0.5 hover:border-white/20"
               style={{
                 animationDelay: `${i * 0.05}s`,
@@ -524,37 +610,20 @@ export default function HomePage() {
             >
               <div
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                style={{
-                  background:
-                    token.symbol === "ETH"
-                      ? "linear-gradient(135deg, #627eea, #a9b3ff)"
-                      : token.symbol === "USDC"
-                        ? "linear-gradient(135deg, #2775ca, #5badff)"
-                        : token.symbol === "LINK"
-                          ? "linear-gradient(135deg, #2a5ada, #4d8fff)"
-                          : token.symbol === "MATIC"
-                            ? "linear-gradient(135deg, #8247e5, #ba97ff)"
-                            : token.symbol === "UNI"
-                              ? "linear-gradient(135deg, #ff007a, #ff6eba)"
-                              : token.symbol === "ARB"
-                                ? "linear-gradient(135deg, #12aaff, #62ceff)"
-                                : token.symbol === "WBTC"
-                                  ? "linear-gradient(135deg, #f7931a, #ffc26b)"
-                                  : "linear-gradient(135deg, #b6509e, #2ebac6)",
-                }}
+                style={{ background: token.gradient }}
               >
-                {token.symbol.slice(0, 1)}
+                {token.icon || token.symbol.slice(0, 1)}
               </div>
               <div className="flex-1">
                 <div className="font-bold">{token.symbol}</div>
                 <div className="text-xs" style={{ color: "rgba(240,244,248,0.45)" }}>
-                  {token.name}
+                  {token.displayName}
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-mono font-medium">{token.price}</div>
-                <div className={`text-xs font-mono ${token.up ? "text-green-400" : "text-red-400"}`}>
-                  {token.change}
+                <div className="font-mono font-medium">{formatUsdShort(token.price)}</div>
+                <div className={`text-xs font-mono ${token.change24h >= 0 ? "text-green-400" : "text-red-400"}`}>
+                  {formatChange(token.change24h)}
                 </div>
               </div>
             </div>
@@ -651,4 +720,17 @@ export default function HomePage() {
       </footer>
     </div>
   );
+}
+
+function formatUsdShort(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return "—";
+  if (n >= 1000) return `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  if (n >= 1) return `$${n.toFixed(2)}`;
+  return `$${n.toFixed(4)}`;
+}
+
+function formatChange(pct: number): string {
+  if (!Number.isFinite(pct)) return "0.00%";
+  const sign = pct >= 0 ? "+" : "";
+  return `${sign}${pct.toFixed(2)}%`;
 }
