@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **Swap no longer fails with "Resource not available" on Arc Testnet**
+  - Root cause: Arc Testnet does not have ETH. The native gas token is USDC, exposed through an ERC-20 interface at `0x3600…0000`. The previous swap code called `sendTransaction({ to: address, value })` for the "ETH" token, which the Arc node rejected during `eth_estimateGas` with `Requested resource not available`, then retried until viem reported `RPC endpoint returned too many errors`.
+  - `src/hooks/use-swap.ts` now always routes through `writeContract({ abi: erc20Abi, functionName: 'transfer' })`. When the user picks "ETH" on Arc Testnet, the helper rewrites the contract address to the USDC contract and converts the amount to the USDC decimals (6), so the transaction is a real ERC-20 `transfer` that the Arc node can estimate.
+  - On non-Arc chains the helper is a no-op, so Sepolia / Ethereum swaps are unchanged.
+  - Removed the unused `useSendTransaction` import; the dead `isNativeTokenAddress` branch is gone.
+- **Hardcode `gas: 100_000n` for `writeContract` on Arc Testnet**
+  - Even with a correct USDC `transfer` call, viem's `eth_estimateGas` on Arc Testnet was returning "Requested resource not available" (verified independent of the RPC provider: both the public Arc RPC and Alchemy return the same error from `eth_estimateGas`, but both return a successful estimate via raw curl with the same params). Hardcoding 100k gas for `writeContract` skips the estimate and lets the transaction submit; ERC-20 `transfer` is fixed-cost ~65k so 100k is a safe margin and well within Arc's block gas limit.
+- **Stop infinite render loop after swap success**
+  - `use-swap.ts` was passing an inline `() => setStatus("success")` as the watcher's `onComplete` callback, so every render created a new function identity, re-triggered the watcher effect, called `removePendingTx`, and re-rendered. Wrapped the callback in `useCallback(..., [])` so its identity is stable.
+- **Toast "warning" type mapped to "info"**
+  - `Toast["type"]` only allows `success | error | info`. The watcher's RPC-busy branch was passing `"warning"`, which never compiled. Changed to `"info"`. The visual style is unchanged (info and warning share the same border colour in `toast.tsx`).
+
+### Added
+
+- **Optional Alchemy RPC for Arc Testnet**
+  - New `NEXT_PUBLIC_ARC_RPC_URL` env var. When set, the Alchemy URL is prepended to the Arc Testnet `fallback()` transport and to the chain's `rpcUrls` array, so every `eth_call` / `eth_estimateGas` / `eth_sendRawTransaction` on Arc Testnet hits Alchemy first.
+  - This removes the "RPC endpoint returned too many errors" failure mode seen on the four public Arc Testnet endpoints (which share the same IP-level rate limit pool).
+  - `.env.example` documents the variable with a placeholder; the placeholder is detected and ignored, so the app falls back to the existing public RPCs until a real key is provided.
+  - `src/lib/wagmi/chains.ts` exposes `getAlchemyRpcUrl()` as a single source of truth, consumed by both `wagmi/config.ts` (transports) and `app-kit/bridge-chains.ts` (bridge RPC).
+
+### Changed
+
+- `src/lib/wagmi/chains.ts` and `src/lib/wagmi/config.ts` now build the Arc Testnet transport list dynamically: Alchemy first (if configured), then the four public RPCs in their existing order.
+- No public RPC was removed; behaviour is identical when `NEXT_PUBLIC_ARC_RPC_URL` is empty or contains the placeholder.
+
+---
+
 ## [2026-06-18] - v0.3.1
 
 ### Fixed

@@ -1,7 +1,12 @@
 import { http, createConfig, fallback, type CreateConnectorFn } from "wagmi";
 import { mainnet, sepolia, polygon, arbitrum } from "wagmi/chains";
 import { injected, walletConnect, coinbaseWallet } from "wagmi/connectors";
-import { arcSepolia, arcTestnet, ARC_TESTNET_CONFIG } from "./chains";
+import {
+  arcSepolia,
+  arcTestnet,
+  ARC_TESTNET_CONFIG,
+  getAlchemyRpcUrl,
+} from "./chains";
 
 const projectId =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID?.trim() || "";
@@ -37,8 +42,20 @@ connectors.push(
   coinbaseWallet({ appName: "ARCquick" })
 );
 
+const alchemyUrl = getAlchemyRpcUrl();
+
 const arcTestnetTransports = fallback(
   [
+    ...(alchemyUrl
+      ? [
+          http(alchemyUrl, {
+            batch: { batchSize: 10, wait: 100 },
+            retryCount: 1,
+            retryDelay: 1000,
+            timeout: 10_000,
+          }),
+        ]
+      : []),
     http(ARC_TESTNET_CONFIG.rpcUrls.primary, {
       batch: { batchSize: 10, wait: 100 },
       retryCount: 1,

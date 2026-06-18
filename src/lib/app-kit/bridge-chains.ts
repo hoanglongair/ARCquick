@@ -1,4 +1,4 @@
-import { ARC_TESTNET_CONFIG } from "@/lib/wagmi/chains";
+import { ARC_TESTNET_CONFIG, getAlchemyRpcUrl } from "@/lib/wagmi/chains";
 
 export interface BridgeChain {
   id: number;
@@ -41,7 +41,7 @@ export const SUPPORTED_BRIDGE_CHAINS: BridgeChain[] = [
     icon: "\u039E",
     iconColor: "linear-gradient(135deg, #627eea, #a9b3ff)",
     nativeCurrency: { name: "USDC", symbol: "USDC" },
-    rpcUrl: ARC_TESTNET_CONFIG.rpcUrls.primary,
+    rpcUrl: getAlchemyRpcUrl() ?? ARC_TESTNET_CONFIG.rpcUrls.primary,
     explorerUrl: ARC_TESTNET_CONFIG.blockExplorer,
     explorerName: "Arcscan",
     isTestnet: true,

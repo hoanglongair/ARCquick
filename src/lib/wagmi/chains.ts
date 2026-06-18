@@ -1,5 +1,14 @@
 import { defineChain } from "viem";
 
+const ALCHEMY_RPC_URL = process.env.NEXT_PUBLIC_ARC_RPC_URL?.trim() ?? "";
+
+export function getAlchemyRpcUrl(): string | null {
+  if (!ALCHEMY_RPC_URL) return null;
+  if (!ALCHEMY_RPC_URL.startsWith("http")) return null;
+  if (ALCHEMY_RPC_URL.endsWith("/your-alchemy-key-here")) return null;
+  return ALCHEMY_RPC_URL;
+}
+
 export const ARC_TESTNET_CONFIG = {
   chainId: 5042002,
   chainIdHex: "0x4CF4B2",
@@ -68,6 +77,7 @@ export const arcSepolia = defineChain({
 });
 
 const arcTestnetHttp = [
+  ...(getAlchemyRpcUrl() ? [getAlchemyRpcUrl() as string] : []),
   ARC_TESTNET_CONFIG.rpcUrls.primary,
   ARC_TESTNET_CONFIG.rpcUrls.drpc,
   ARC_TESTNET_CONFIG.rpcUrls.quicknode,

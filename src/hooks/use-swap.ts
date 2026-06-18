@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useAccount, useSendTransaction, useWriteContract } from "wagmi";
+import { useAccount, useWriteContract } from "wagmi";
 import { erc20Abi, parseUnits } from "viem";
 import type { Token } from "@/types";
 import { isValidSwapAmount } from "@/lib/app-kit";
 import { TOKENS, isNativeTokenAddress } from "@/lib/tokens";
+import { ARC_TESTNET_CONFIG } from "@/lib/wagmi/chains";
 import { useTokenListWithPrices } from "@/hooks/use-token-list";
 import { useAppStore } from "@/stores";
 import { useTransactionWatcher } from "@/hooks/use-transaction-watcher";
@@ -25,12 +26,52 @@ export interface SwapError {
   message: string;
 }
 
+/**
+ * Resolve the actual ERC-20 contract address to call for a given token.
+ *
+ * Arc Testnet does NOT have ETH - USDC is the native gas token and is exposed
+ * through an ERC-20 interface at `0x3600…0000`. Any token whose address is the
+ * `0x0` placeholder (i.e. ETH on Arc) must be routed to the USDC contract so
+ * the swap hits a real, estimate-able transaction instead of failing
+ * `eth_estimateGas` with "Resource not available".
+ *
+ * When swapping from "ETH" on Arc Testnet, we therefore call
+ * `USDC.transfer(address, amount)` with USDC decimals (6). The UI still
+ * displays "ETH" - this is a testnet-only placeholder behaviour until a real
+ * DEX router is integrated.
+ */
+function resolveSwapContractAddress(
+  token: Token,
+  isArcTestnet: boolean
+): `0x${string}` {
+  if (!isNativeTokenAddress(token.address)) {
+    return token.address as `0x${string}`;
+  }
+  if (isArcTestnet) {
+    return ARC_TESTNET_CONFIG.contracts.usdc as `0x${string}`;
+  }
+  // Fallback for non-Arc chains: keep the placeholder, the caller will fail
+  // gracefully rather than silently corrupting state.
+  return token.address as `0x${string}`;
+}
+
+function resolveSwapAmountDecimals(token: Token, isArcTestnet: boolean): number {
+  if (!isNativeTokenAddress(token.address)) {
+    return token.decimals;
+  }
+  if (isArcTestnet) {
+    return ARC_TESTNET_CONFIG.nativeCurrency.decimals;
+  }
+  return token.decimals;
+}
+
 export function useSwap() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
   const { slippageTolerance, addTransaction, updateTransaction } = useAppStore();
 
-  const { sendTransactionAsync } = useSendTransaction();
   const { writeContractAsync } = useWriteContract();
+
+  const isArcTestnet = chainId === ARC_TESTNET_CONFIG.chainId;
 
   // Live prices from /api/prices → applied to quote calculation.
   const { bySymbol } = useTokenListWithPrices();
@@ -51,13 +92,16 @@ export function useSwap() {
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useTransactionWatcher(pendingTxHash, () => {
-    setStatus("success");
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  });
+  useTransactionWatcher(
+    pendingTxHash,
+    useCallback(() => {
+      setStatus("success");
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    }, [])
+  );
 
   const clearPendingTimeout = useCallback(() => {
     if (timeoutRef.current) {
@@ -121,7 +165,7 @@ export function useSwap() {
         const minimumReceived = (toAmountFloat * slippageFactor).toFixed(
           toToken.decimals > 6 ? 4 : 2
         );
-        const estimatedGas = isNativeTokenAddress(fromToken.address) ? "0.002" : "0.008";
+        const estimatedGas = "0.001";
         const priceImpact = Math.abs(rate - 1) > 0.05 ? 0.1 : 0.01;
 
         setQuote({
@@ -168,26 +212,41 @@ export function useSwap() {
       clearPendingTimeout();
 
       try {
-        const valueWei = parseUnits(fromAmount, fromToken.decimals);
-        let hash: `0x${string}`;
+        const swapDecimals = resolveSwapAmountDecimals(fromToken, isArcTestnet);
+        const valueWei = parseUnits(fromAmount, swapDecimals);
+        const contractAddress = resolveSwapContractAddress(
+          fromToken,
+          isArcTestnet
+        );
 
-        if (isNativeTokenAddress(fromToken.address)) {
-          // Native token: self-transfer to the connected wallet.
-          // In a real DEX, this would call a router contract.
-          hash = await sendTransactionAsync({
-            to: address,
-            value: valueWei,
-          });
-        } else {
-          // ERC20: call transfer on the token contract.
-          // In a real DEX this would approve the router contract.
-          hash = await writeContractAsync({
-            address: fromToken.address as `0x${string}`,
-            abi: erc20Abi,
-            functionName: "transfer",
-            args: [address, valueWei],
-          });
-        }
+        // Both "native" and ERC-20 routes call an ERC-20 `transfer` against the
+        // resolved token contract. On Arc Testnet, the "native" placeholder
+        // (ETH, address 0x0) is rewritten to the USDC ERC-20 interface so the
+        // transaction can be estimated and submitted cleanly.
+        //
+        // On Arc Testnet we pass an explicit `gas` to skip viem's
+        // `eth_estimateGas` call. Arc Testnet currently returns
+        // `Requested resource not available` for `eth_estimateGas` on USDC
+        // `transfer` calls even though the same call succeeds from a raw curl
+        // against either the public RPC or Alchemy. Hardcoding 100k gas is
+        // safe: ERC-20 transfer is fixed-cost (~65k), and 100k stays well
+        // inside Arc's block gas limit.
+        const writeOptions = isArcTestnet
+          ? {
+              address: contractAddress,
+              abi: erc20Abi,
+              functionName: "transfer" as const,
+              args: [address, valueWei] as const,
+              gas: BigInt(100_000),
+            }
+          : {
+              address: contractAddress,
+              abi: erc20Abi,
+              functionName: "transfer" as const,
+              args: [address, valueWei] as const,
+            };
+
+        const hash: `0x${string}` = await writeContractAsync(writeOptions);
 
         setTxHash(hash);
         setStatus("pending");
@@ -229,11 +288,11 @@ export function useSwap() {
       toToken,
       addTransaction,
       updateTransaction,
-      sendTransactionAsync,
       writeContractAsync,
       txHash,
       clearPendingTimeout,
       startPendingTimeout,
+      isArcTestnet,
     ]
   );
 

@@ -4,6 +4,7 @@ import { useEffect, useCallback, useRef } from "react";
 import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { useAppStore } from "@/stores";
 import { useToast } from "@/components/effects/toast";
+import { ARC_TESTNET_CONFIG } from "@/lib/wagmi/chains";
 
 const PENDING_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -22,7 +23,14 @@ export function useTransactionWatcher(
     error: receiptError,
   } = useWaitForTransactionReceipt({
     hash: txHash ?? undefined,
-    chainId,
+    chainId: (chainId ?? ARC_TESTNET_CONFIG.chainId) as
+      | 1
+      | 421614
+      | 5042002
+      | 11155111
+      | 137
+      | 42161
+      | undefined,
     pollingInterval: 4_000,
     timeout: PENDING_TIMEOUT_MS,
     confirmations: 1,
@@ -63,7 +71,7 @@ export function useTransactionWatcher(
       const message = isRpcError
         ? "Network is busy. Your transaction is still valid - check the explorer in a few minutes."
         : "Transaction failed";
-      showToast(message, isRpcError ? "warning" : "error");
+      showToast(message, isRpcError ? "info" : "error");
 
       if (!isRpcError) {
         updateTransaction(txHash, { status: "failed" });
